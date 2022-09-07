@@ -1,0 +1,12 @@
+{
+  "includePatterns": ["src/**"],
+  "baseVersion": "override-0.0.1-abcde",
+  "overrides": [
+    {
+      "type": "derived",
+      "file": "src/index.wasm.js",
+      "baseFile": "index.js",
+      "baseHash": "dddd"
+    }
+  ]
+}
