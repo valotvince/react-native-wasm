@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "lib": ["es5", "es6"],
+    "moduleResolution": "node",
+    "noEmit": true,
+    "strict": true,
+    "declaration": true,
+    "module": "esnext",
+    "target": "esnext"
+  },
+  "include": ["src"],
+  "exclude": ["**/node_modules", "**/babel.config.js", "**/metro.config.js", "**/jest.config.js", "**/*.spec.*"]
+}

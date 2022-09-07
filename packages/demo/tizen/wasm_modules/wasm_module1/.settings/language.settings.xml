@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project>
+	<configuration id="org.tizen.web.tv.sec.wasm.builder.toolchain.debug-configuration.1801116264" name="Debug">
+		<extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
+			<provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="false" env-hash="-1866268210526" id="org.tizen.web.tv.sec.wasm.builder.toolchain.EmscriptenBuiltinSettingsProvider" keep-relative-paths="false" name="Emscripten Builtin Compiler Settings" parameter="${COMMAND}${WASM_TOOLS_POSTFIX} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+				<language-scope id="org.eclipse.cdt.core.gcc"/>
+				<language-scope id="org.eclipse.cdt.core.g++"/>
+			</provider>
+		</extension>
+	</configuration>
+	<configuration id="org.tizen.web.tv.sec.wasm.builder.toolchain.release-configuration.458131360" name="Release">
+		<extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
+			<provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="false" env-hash="-1866268210526" id="org.tizen.web.tv.sec.wasm.builder.toolchain.EmscriptenBuiltinSettingsProvider" keep-relative-paths="false" name="Emscripten Builtin Compiler Settings" parameter="${COMMAND}${WASM_TOOLS_POSTFIX} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+				<language-scope id="org.eclipse.cdt.core.gcc"/>
+				<language-scope id="org.eclipse.cdt.core.g++"/>
+			</provider>
+		</extension>
+	</configuration>
+</project>

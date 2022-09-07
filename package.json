@@ -1,0 +1,15 @@
+{
+  "name": "react-native-wasm",
+  "version": "0.0.1",
+  "dependencies": {
+    "@react-native-community/cli-types": "^9.0.0",
+    "react": "^18.2.0",
+    "react-native": "^0.70.0"
+  },
+  "devDependencies": {
+    "@types/react-native": "^0.69.6",
+    "metro-react-native-babel-preset": "^0.72.2",
+    "react-native-platform-override": "1.6.13",
+    "typescript": "^4.8.2"
+  }
+}

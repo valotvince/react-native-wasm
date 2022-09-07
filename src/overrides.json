@@ -1,0 +1,12 @@
+{
+  "includePatterns": ["src/**"],
+  "excludePatterns": [],
+  "baseVersion": "",
+  "overrides": [
+    {
+      "type": "derived",
+      "file": "src/index.win32.js",
+      "baseFile": "index.js"
+    }
+  ]
+}

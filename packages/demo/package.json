@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "start": "react-native run-wasm"
+  },
+  "dependencies": {
+    "react-native-wasm": "0.0.1"
+  }
+}
