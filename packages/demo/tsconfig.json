@@ -4,5 +4,5 @@
     "jsx": "react",
     "lib": ["dom", "es5", "es6"]
   },
-  "include": ["src"]
+  "include": ["src/**/*", "index.tsx"]
 }

@@ -1,0 +1,18 @@
+{
+  "includePatterns": ["src/**"],
+  "baseVersion": "0.0.1-abcde",
+  "overrides": [
+    {
+      "type": "derived",
+      "file": "src/index.wasm.js",
+      "baseFile": "index.js",
+      "baseHash": "dddd"
+    },
+    {
+      "type": "derived",
+      "file": "src/Libraries/Utilities/Platform.wasm.js",
+      "baseFile": "Libraries/Utilities/Platform.android.js",
+      "baseHash": "dddd"
+    }
+  ]
+}

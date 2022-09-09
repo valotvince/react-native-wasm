@@ -6,7 +6,7 @@
 
 class Text {
     public:
-        Text initWithFrame();
+        void initWithFrame();
         void updateProps();
 };
 

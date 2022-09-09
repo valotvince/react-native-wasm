@@ -1,15 +1,12 @@
 {
-  "name": "react-native-wasm",
+  "name": "@valotvince/react-native-wasm-main",
   "version": "0.0.1",
-  "dependencies": {
-    "@react-native-community/cli-types": "^9.0.0",
-    "react": "^18.2.0",
-    "react-native": "^0.70.0"
-  },
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {},
   "devDependencies": {
-    "@types/react-native": "^0.69.6",
-    "metro-react-native-babel-preset": "^0.72.2",
-    "react-native-platform-override": "1.6.13",
     "typescript": "^4.8.2"
   }
 }

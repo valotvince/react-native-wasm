@@ -1,8 +1,25 @@
 {
+  "name": "@valotvince/react-native-wasm-demo",
+  "version": "1.0.0",
   "scripts": {
-    "start": "react-native run-wasm"
+    "start": "react-native-wasm-run"
   },
+  "private": true,
+  "main": "./index.tsx",
   "dependencies": {
-    "react-native-wasm": "0.0.1"
+    "@valotvince/react-native-wasm": "0.0.1",
+    "react": "^18.2.0",
+    "react-native": "^0.70.0"
+  },
+  "workspaces": {
+    "nohoist": [
+      "**"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.0",
+    "@babel/runtime": "^7.19.0",
+    "metro-react-native-babel-preset": "^0.72.2",
+    "typescript": "^4.8.2"
   }
 }
