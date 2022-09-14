@@ -48,7 +48,7 @@ module.exports = async (cwd, library) => {
   }
 
   const sources = library.sources.reduce((accumulator, source) => {
-    if (manifest.sources[source] !== existingManifest.sources[source]) {
+    if (existingManifest && manifest.sources[source] !== existingManifest.sources[source]) {
       accumulator.push(source);
     }
 

@@ -123,22 +123,23 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
   };
 };
 
-const getReactNativeWasm = () => {
+const getReactNativeWasm = (reactNativeWasmDir) => {
   return {
     compilerFlags: ['-pthread'],
     includes: [],
     definitions: [],
     sources: [
-      'src/Libraries/Utilities/PlatformConstants.cpp',
-      'src/Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
-      'src/Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
-      'src/Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
-      'src/Libraries/ReactNativeWasm/Turbo/TurboModuleManager.cpp',
-      // 'src/Libraries/ReactNativeWasm/Turbo/TurboModulesProvider.cpp',
-      'src/Libraries/Components/View/View.cpp',
-      'src/ReactWasmInstance.cpp',
-      'src/ReactWasmEntry.cpp',
-    ],
+      'ReactWasmEntry.cpp',
+      'ReactWasmInstance.cpp',
+      'Libraries/Utilities/PlatformConstants.cpp',
+      'Libraries/ReactNativeWasm/Bindings/Bindings.cpp',
+      'Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
+      'Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
+      'Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
+      'Libraries/ReactNativeWasm/Turbo/TurboModuleManager.cpp',
+      // 'Libraries/ReactNativeWasm/Turbo/TurboModulesProvider.cpp',
+      'Libraries/Components/View/View.cpp',
+    ].map((file) => path.join(reactNativeWasmDir, 'src', file)),
   };
 };
 
