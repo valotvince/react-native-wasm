@@ -2,7 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const reactNativePath = path.join(__dirname, 'node_modules', 'react-native');
-const reactNativeWasmPath = path.resolve(__dirname, '../react-native-wasm');
+const reactNativeWasmPath = path.resolve(__dirname, '..', 'react-native-wasm');
+const reactNativeWasmSourcePath = path.join(reactNativeWasmPath, 'src');
 
 const extensions = ['js', 'jsx', 'ts', 'tsx'];
 
@@ -26,17 +27,21 @@ const getModuleName = (context, originalModuleName) => {
   }
 
   const moduleName = path.join(
-    originalModuleDir.replace(reactNativeWasmPath, '').replace(reactNativePath, ''),
+    originalModuleDir.replace(`${reactNativeWasmSourcePath}/`, '').replace(`${reactNativePath}/`, ''),
     originalModuleName,
   );
+
+  if (fs.existsSync(moduleName)) {
+    return moduleName;
+  }
 
   if (testExtensions(moduleName)) {
     return moduleName;
   }
 
   // Local override
-  if (testExtensions(path.join(reactNativeWasmPath, 'src', moduleName))) {
-    return path.join(reactNativeWasmPath, 'src', moduleName);
+  if (testExtensions(path.join(reactNativeWasmSourcePath, moduleName))) {
+    return path.join(reactNativeWasmSourcePath, moduleName);
   }
 
   if (testExtensions(path.join(__dirname, 'node_modules', 'react-native', moduleName))) {
@@ -53,7 +58,7 @@ const getModuleName = (context, originalModuleName) => {
   }
 
   if (moduleName.includes('Libraries')) {
-    return path.join(reactNativeWasmPath, 'src', 'Libraries/Unimplemented');
+    return path.join(reactNativeWasmSourcePath, 'Libraries/Unimplemented');
   }
 
   return moduleName;
@@ -64,8 +69,6 @@ module.exports = {
   resolver: {
     resolveRequest: (context, moduleName, platform) => {
       const redirectedModuleName = getModuleName(context, moduleName);
-
-      console.log({ moduleName, redirectedModuleName });
 
       return context.resolveRequest(context, redirectedModuleName, platform);
     },
@@ -81,6 +84,13 @@ module.exports = {
     },
   },
   watchFolders: [reactNativeWasmPath],
+  serializer: {
+    getModulesRunBeforeMainModule: () => {
+      const options = { paths: [process.cwd()] };
+
+      return [require.resolve('react-native/Libraries/Core/InitializeCore', options)];
+    },
+  },
   transformer: {
     getTransformOptions: async () => ({
       transform: {
