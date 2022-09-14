@@ -47,6 +47,14 @@ module.exports = async (cwd, library) => {
     return;
   }
 
+  const sources = library.sources.reduce((accumulator, source) => {
+    if (manifest.sources[source] !== existingManifest.sources[source]) {
+      accumulator.push(source);
+    }
+
+    return accumulator;
+  }, []);
+
   await spawnPromise(
     'emcc',
     [
@@ -55,7 +63,7 @@ module.exports = async (cwd, library) => {
       ...library.compilerFlags,
       ...library.definitions.map((definition) => `-D${definition}`),
       ...library.includes.map((include) => `-I${include}`),
-      ...library.sources,
+      ...sources,
 
       '-c',
     ],
