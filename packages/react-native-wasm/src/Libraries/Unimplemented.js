@@ -1,3 +1,3 @@
 module.exports = () => {
-  throw new Error('Not implemented');
+  throw new Error('Library not implemented');
 };

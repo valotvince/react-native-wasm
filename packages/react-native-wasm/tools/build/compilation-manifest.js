@@ -125,7 +125,8 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
 
 const getReactNativeWasm = (reactNativeWasmDir) => {
   return {
-    compilerFlags: ['-pthread'],
+    name: 'app',
+    compilerFlags: ['-lembind', '-pthread', '-s', 'USE_SDL=2'],
     includes: [],
     definitions: [],
     sources: [

@@ -6,4 +6,4 @@ export interface NativeProps extends ViewProps {
   // add other props here
 }
 
-export default codegenNativeComponent<NativeProps>('RTNText') as HostComponent<NativeProps>;
+export default codegenNativeComponent<NativeProps>('RNWiew') as HostComponent<NativeProps>;

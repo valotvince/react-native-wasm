@@ -2,21 +2,18 @@
 #include <vector>
 #include <SDL2/SDL.h>
 
-#include "reactNativeWasm.hpp"
-#include "../Component/component.hpp"
-
-namespace ReactNativeWasm {
+namespace ReactNativeWasm::Renderer {
     SDL_Renderer *renderer;
-    std::vector<Component> components = {};
+    // std::vector<Component> components = {};
 
     void setRenderer(SDL_Renderer **r) {
         renderer = *r;
     }
 
-    bool render(float width, float height) {
-        Component component = Component("Toto", width, height);
+    bool render(float top, float left, float width, float height) {
+        // Component component = Component("Toto", width, height);
 
-        components.push_back(component);
+        // components.push_back(component);
 
 
         // Set a color for drawing matching the earlier `ctx.fillStyle = "green"`.
@@ -36,6 +33,6 @@ namespace ReactNativeWasm {
  * (see the updated index.html file of the parent project,
  * starting from the tag: "WASM MODULE START: HelloWorld")
  */
-EMSCRIPTEN_BINDINGS(ReactNativeWasm) {
-    emscripten::function("ReactNativeWasm_render", ReactNativeWasm::render);
-}
+// EMSCRIPTEN_BINDINGS(ReactNativeWasm) {
+//     emscripten::function("ReactNativeWasm_render", ReactNativeWasm::render);
+// }

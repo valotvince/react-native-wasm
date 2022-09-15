@@ -3,10 +3,10 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
-namespace ReactNativeWasm {
+namespace ReactNativeWasm::Renderer {
     void setRenderer(SDL_Renderer **r);
 
-    bool render(float width, float height);
+    bool render(float top, float left, float width, float height);
 }
 
 #endif
