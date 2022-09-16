@@ -3,7 +3,9 @@ const path = require('path');
 
 const reactNativePath = path.join(__dirname, 'node_modules', 'react-native');
 const reactNativeWasmPath = path.resolve(__dirname, '..', 'react-native-wasm');
+
 const reactNativeWasmSourcePath = path.join(reactNativeWasmPath, 'src');
+const reactNativeWasmReactNativePath = path.join(reactNativeWasmPath, 'node_modules', 'react-native');
 
 const extensions = ['js', 'jsx', 'ts', 'tsx'];
 
@@ -27,7 +29,10 @@ const getModuleName = (context, originalModuleName) => {
   }
 
   const moduleName = path.join(
-    originalModuleDir.replace(`${reactNativeWasmSourcePath}/`, '').replace(`${reactNativePath}/`, ''),
+    originalModuleDir
+      .replace(`${reactNativeWasmSourcePath}/`, '')
+      .replace(`${reactNativePath}/`, '')
+      .replace(`${reactNativeWasmReactNativePath}/`, ''),
     originalModuleName,
   );
 
@@ -39,13 +44,17 @@ const getModuleName = (context, originalModuleName) => {
     return moduleName;
   }
 
+  const localOverride = path.join(reactNativeWasmSourcePath, moduleName);
+
   // Local override
-  if (testExtensions(path.join(reactNativeWasmSourcePath, moduleName))) {
-    return path.join(reactNativeWasmSourcePath, moduleName);
+  if (testExtensions(localOverride)) {
+    return localOverride;
   }
 
-  if (testExtensions(path.join(__dirname, 'node_modules', 'react-native', moduleName))) {
-    return path.join(__dirname, 'node_modules', 'react-native', moduleName);
+  const reactNativeExisting = path.join(reactNativePath, moduleName);
+
+  if (testExtensions(reactNativeExisting)) {
+    return reactNativeExisting;
   }
 
   if (moduleName.includes('Libraries/Components')) {
