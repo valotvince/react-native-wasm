@@ -20,7 +20,7 @@ const dependencies = [
 (async () => {
   // await overrideRn();
 
-  const { libraries, main } = getCompilationManifest(reactNativeWasmDir, reactNativeDir);
+  const { libraries } = getCompilationManifest(reactNativeWasmDir, reactNativeDir);
 
   await Promise.all(libraries.map((library) => buildLibrary(reactNativeWasmDir, library)));
 
@@ -41,11 +41,6 @@ const dependencies = [
       '-std=c++17',
       '--js-library',
       path.join(reactNativeWasmDir, 'src/Libraries/Utilities/JavascriptAccessor/JavascriptAccessor.js'),
-
-      ...main.definitions.map((definition) => `-D${definition}`),
-      ...main.includes.map((include) => `-I${include}`),
-
-      ...main.sources,
 
       ...libraries.map(({ name }) => `build/${name}/${name}.a`),
 

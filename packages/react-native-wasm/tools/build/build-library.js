@@ -1,4 +1,5 @@
 const fs = require('fs/promises');
+const fsSync = require('fs');
 const path = require('path');
 const { generateChecksum, generateFileChecksum } = require('../checksum');
 
@@ -35,6 +36,10 @@ const shouldRebuild = (manifest, existingManifest) => {
   return generateChecksum(JSON.stringify(manifest)) !== generateChecksum(JSON.stringify(existingManifest));
 };
 
+const getObjectOutputFilePath = (outputDirectory, sourcePath) => {
+  return path.join(outputDirectory, sourcePath.substring(sourcePath.lastIndexOf('/') + 1).replace('.cpp', '.o'));
+};
+
 module.exports = async (cwd, library) => {
   const outputDirectory = path.join(cwd, 'build', library.name);
 
@@ -48,7 +53,10 @@ module.exports = async (cwd, library) => {
   }
 
   const sources = library.sources.reduce((accumulator, source) => {
-    if (existingManifest && manifest.sources[source] !== existingManifest.sources[source]) {
+    if (
+      (existingManifest && manifest.sources[source] !== existingManifest.sources[source]) ||
+      !fsSync.existsSync(getObjectOutputFilePath(outputDirectory, sourcePath))
+    ) {
       accumulator.push(source);
     }
 
@@ -72,9 +80,27 @@ module.exports = async (cwd, library) => {
 
   const files = await fs.readdir(outputDirectory);
 
-  await spawnPromise('emar', ['rc', `${library.name}.a`, ...files.filter((file) => file.endsWith('.o'))], {
+  await spawnPromise('emar', ['rcs', `${library.name}.a`, ...files.filter((file) => file.endsWith('.o'))], {
     cwd: outputDirectory,
   });
 
-  await fs.writeFile(path.join(outputDirectory, 'manifest.json'), JSON.stringify(manifest));
+  const updatedSources = library.sources.reduce((accumulator, source) => {
+    if (fsSync.existsSync(getObjectOutputFilePath(outputDirectory, source))) {
+      accumulator.push(source);
+    }
+
+    return accumulator;
+  }, []);
+
+  await fs.writeFile(
+    path.join(outputDirectory, 'manifest.json'),
+    JSON.stringify(
+      {
+        ...manifest,
+        sources: await getChecksums(updatedSources),
+      },
+      null,
+      2,
+    ),
+  );
 };

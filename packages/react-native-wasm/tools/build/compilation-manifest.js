@@ -126,12 +126,14 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
 const getReactNativeWasm = (reactNativeWasmDir) => {
   return {
     name: 'app',
-    compilerFlags: ['-lembind', '-pthread', '-s', 'USE_SDL=2'],
+    compilerFlags: ['-pthread', '-s', 'USE_SDL=2'],
     includes: [],
     definitions: [],
     sources: [
       'ReactWasmEntry.cpp',
       'ReactWasmInstance.cpp',
+      'Libraries/Utilities/Timing/Timing.cpp',
+      'Libraries/Utilities/DevSettings/DevSettings.cpp',
       'Libraries/Utilities/PlatformConstants.cpp',
       'Libraries/ReactNativeWasm/Bindings/Bindings.cpp',
       'Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
@@ -175,6 +177,7 @@ module.exports = (reactNativeWasmDir, reactNativeDir) => {
           getFmt(reactNativeWasmDir),
           getFolly(reactNativeWasmDir),
           getReactNative(reactNativeWasmDir, reactNativeDir),
+          getReactNativeWasm(reactNativeWasmDir),
         ],
         'includes',
       ),
@@ -184,11 +187,7 @@ module.exports = (reactNativeWasmDir, reactNativeDir) => {
     'definitions',
   );
 
-  const main = getReactNativeWasm(reactNativeWasmDir);
-  const lastLibrary = libraries[libraries.length - 1];
-
   return {
-    libraries: libraries,
-    main: mergeValues(mergeValues(main, 'includes', lastLibrary.includes), 'definitions', lastLibrary.definitions),
+    libraries,
   };
 };
