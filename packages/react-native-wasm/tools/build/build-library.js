@@ -55,7 +55,7 @@ module.exports = async (cwd, library) => {
   const sources = library.sources.reduce((accumulator, source) => {
     if (
       (existingManifest && manifest.sources[source] !== existingManifest.sources[source]) ||
-      !fsSync.existsSync(getObjectOutputFilePath(outputDirectory, sourcePath))
+      !fsSync.existsSync(getObjectOutputFilePath(outputDirectory, source))
     ) {
       accumulator.push(source);
     }
