@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 #include "DevSettings.hpp"
-#include <emscripten/bind.h>
 #include <cxxreact/CxxNativeModule.h>
 
 using Method = facebook::xplat::module::CxxModule::Method;
@@ -63,9 +62,3 @@ namespace ReactNativeWasm {
     }
 
 }
-
-// EMSCRIPTEN_BINDINGS(ReactNativeWasmDevSettings) {
-//     emscripten::class_<ReactNativeWasm::DevSettings, emscripten::base<facebook::react::NativeModule>>("DevSettings")
-//         .smart_ptr<std::shared_ptr<ReactNativeWasm::DevSettings>>("DevSettings")
-//         .function("reload", &ReactNativeWasm::DevSettings::reload);
-// }
