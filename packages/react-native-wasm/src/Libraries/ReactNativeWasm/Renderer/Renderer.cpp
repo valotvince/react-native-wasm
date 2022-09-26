@@ -27,12 +27,3 @@ namespace ReactNativeWasm::Renderer {
         return true;
     }
 }
-
-/*
- * This way the function may be called from the JavaScript code.
- * (see the updated index.html file of the parent project,
- * starting from the tag: "WASM MODULE START: HelloWorld")
- */
-// EMSCRIPTEN_BINDINGS(ReactNativeWasm) {
-//     emscripten::function("ReactNativeWasm_render", ReactNativeWasm::render);
-// }

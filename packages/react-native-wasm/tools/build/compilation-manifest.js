@@ -116,9 +116,14 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
         'logger/react_native_log.cpp',
         'jsi/jsi/jsi.cpp',
       ].map((file) => path.join(reactNativeReactCommonDir, file)),
-      ...['Instance.cpp', 'CxxNativeModule.cpp', 'ModuleRegistry.cpp', 'NativeToJsBridge.cpp', 'JSBigString.cpp'].map(
-        (file) => path.join(reactNativeCxxReactPath, file),
-      ),
+      ...[
+        'MethodCall.cpp',
+        'Instance.cpp',
+        'CxxNativeModule.cpp',
+        'ModuleRegistry.cpp',
+        'NativeToJsBridge.cpp',
+        'JSBigString.cpp',
+      ].map((file) => path.join(reactNativeCxxReactPath, file)),
     ],
   };
 };
@@ -126,7 +131,7 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
 const getReactNativeWasm = (reactNativeWasmDir) => {
   return {
     name: 'app',
-    compilerFlags: ['-pthread', '-s', 'USE_SDL=2'],
+    compilerFlags: ['-pthread', '-s', 'USE_SDL=2', '-fexceptions'],
     includes: [],
     definitions: [],
     sources: [
@@ -135,11 +140,11 @@ const getReactNativeWasm = (reactNativeWasmDir) => {
       'Libraries/Utilities/Timing/Timing.cpp',
       'Libraries/Utilities/DevSettings/DevSettings.cpp',
       'Libraries/Utilities/PlatformConstants.cpp',
-      'Libraries/ReactNativeWasm/Bindings/Bindings.cpp',
       'Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
       'Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
       'Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
       'Libraries/ReactNativeWasm/Turbo/TurboModuleManager.cpp',
+      'Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.cpp',
       // 'Libraries/ReactNativeWasm/Turbo/TurboModulesProvider.cpp',
       'Libraries/Components/View/View.cpp',
     ].map((file) => path.join(reactNativeWasmDir, 'src', file)),

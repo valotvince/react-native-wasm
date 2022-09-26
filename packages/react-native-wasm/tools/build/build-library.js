@@ -37,7 +37,7 @@ const shouldRebuild = (manifest, existingManifest) => {
 };
 
 const getObjectOutputFilePath = (outputDirectory, sourcePath) => {
-  return path.join(outputDirectory, sourcePath.substring(sourcePath.lastIndexOf('/') + 1).replace('.cpp', '.o'));
+  return path.join(outputDirectory, sourcePath.substring(sourcePath.lastIndexOf('/') + 1).replace(/\.(cpp|cc)/, '.o'));
 };
 
 module.exports = async (cwd, library) => {
@@ -54,7 +54,8 @@ module.exports = async (cwd, library) => {
 
   const sources = library.sources.reduce((accumulator, source) => {
     if (
-      (existingManifest && manifest.sources[source] !== existingManifest.sources[source]) ||
+      !existingManifest ||
+      manifest.sources[source] !== existingManifest.sources[source] ||
       !fsSync.existsSync(getObjectOutputFilePath(outputDirectory, source))
     ) {
       accumulator.push(source);
@@ -67,6 +68,10 @@ module.exports = async (cwd, library) => {
     'emcc',
     [
       '-std=c++17',
+      '-Wall',
+      '-fexceptions',
+      '-fsanitize=address',
+      '-g',
 
       ...library.compilerFlags,
       ...library.definitions.map((definition) => `-D${definition}`),

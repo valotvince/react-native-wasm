@@ -5,6 +5,7 @@
 
 #include "Timing.hpp"
 
+#include <cxxreact/Instance.h>
 #include <cxxreact/JsArgumentHelpers.h>
 
 
@@ -14,10 +15,6 @@ namespace ReactNativeWasm {
 
         timers = std::make_shared<std::vector<Timer>>();
         thread = std::thread(&Timing::loop, std::ref(*this));
-
-        // mutex = std::mutex();
-
-        // thread.detach();
     }
 
     Timing::~Timing() {
@@ -38,7 +35,7 @@ namespace ReactNativeWasm {
         folly::dynamic timersToFire = folly::dynamic::array();
         auto nextTimers = std::vector<Timer>();
 
-        std::lock_guard<std::mutex> guard(mutex);
+        mutex.lock();
 
         for (auto it = timers->begin(); it != timers->end();) {
             auto timer = it;
@@ -49,12 +46,9 @@ namespace ReactNativeWasm {
                 timersToFire.push_back(timer->id);
 
                 if (timer->repeat) {
-                std::cout << "before assign" << std::endl;
                     auto nextTimer = Timer(timer->id, now + timer->duration, timer->duration, timer->repeat);
-                std::cout << "before push_back" << std::endl;
 
                     nextTimers.push_back(nextTimer);
-                std::cout << "after push_back" << std::endl;
                 }
 
                 it = timers->erase(it);
@@ -67,6 +61,8 @@ namespace ReactNativeWasm {
             timers->push_back(nextTimers.at(std::distance(nextTimers.begin(), it)));
         }
 
+        mutex.unlock();
+
         if (!timersToFire.empty()) {
             auto instance = getInstance().lock();
 
@@ -75,8 +71,7 @@ namespace ReactNativeWasm {
 
                 std::cout << "before call js function" << std::endl;
 
-                instance->doNothing();
-                // instance->callJSFunction("JSTimers", "callTimers", std::move(args));
+                instance->callJSFunction("JSTimers", "callTimers", std::move(args));
 
                 std::cout << "after call js function" << std::endl;
             } else {

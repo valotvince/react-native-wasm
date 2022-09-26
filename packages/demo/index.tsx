@@ -1,8 +1,8 @@
 import React from 'react';
-import { AppRegistry, Text } from 'react-native';
+import { AppRegistry, View } from 'react-native';
 
 const Demo = () => {
-  return <Text>Hello World !</Text>;
+  return <View />;
 };
 
 AppRegistry.registerComponent('main', () => Demo);

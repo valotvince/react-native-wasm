@@ -24,21 +24,36 @@ const dependencies = [
 
   await Promise.all(libraries.map((library) => buildLibrary(reactNativeWasmDir, library)));
 
+  const warnings = ['all', 'cast-align', 'over-aligned'].map((warning) => `-W${warning}`);
+  const options = [
+    'USE_SDL=2',
+    'LLD_REPORT_UNDEFINED=1',
+    'PTHREAD_POOL_SIZE=4',
+    'USE_PTHREADS=1',
+    'ALLOW_BLOCKING_ON_MAIN_THREAD=0',
+    // 'PROXY_TO_PTHREAD',
+    'EXPORTED_RUNTIME_METHODS=ccall,cwrap',
+    'NO_EXIT_RUNTIME=1',
+    'WARN_UNALIGNED=1',
+    'ASSERTIONS=2',
+    'ASYNCIFY',
+    'ALLOW_MEMORY_GROWTH=1',
+  ].map((warning) => `-s${warning}`);
+
   await spawnPromise(
     'emcc',
     [
       '-lembind',
       '-pthread',
-      '-s',
-      'USE_SDL=2',
-      '-s',
-      'LLD_REPORT_UNDEFINED=1',
-      // '-s',
-      // 'PROXY_TO_PTHREAD',
-      '-sEXPORTED_RUNTIME_METHODS=ccall,cwrap',
+      ...options,
+      ...warnings,
       // Fast-incremental builds
+      '-fexceptions',
+      '-fsanitize=address',
+      '-g',
       '-O0',
       '-std=c++17',
+      '--threadprofiler',
       '--js-library',
       path.join(reactNativeWasmDir, 'src/Libraries/Utilities/JavascriptAccessor/JavascriptAccessor.js'),
 
@@ -50,15 +65,15 @@ const dependencies = [
     { cwd: reactNativeWasmDir },
   );
 
-  // await spawnPromise('react-native', [
-  //   'bundle',
-  //   '--platform',
-  //   'wasm',
-  //   '--entry-file',
-  //   './index.tsx',
-  //   '--dev',
-  //   'true',
-  //   '--bundle-output',
-  //   path.resolve(path.join(reactNativeWasmDir, 'dist', 'react-native.bundle.js')),
-  // ]);
+  await spawnPromise('react-native', [
+    'bundle',
+    '--platform',
+    'wasm',
+    '--entry-file',
+    './index.tsx',
+    '--dev',
+    'true',
+    '--bundle-output',
+    path.resolve(path.join(reactNativeWasmDir, 'dist', 'react-native.bundle.js')),
+  ]);
 })();

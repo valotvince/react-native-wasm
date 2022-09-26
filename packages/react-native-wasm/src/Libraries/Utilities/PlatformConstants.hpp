@@ -14,6 +14,5 @@ namespace facebook::react {
 
   private:
     static folly::dynamic StringOrNull(std::string_view str) noexcept;
-    static int32_t OsVersion() noexcept;
   };
 }
