@@ -64,6 +64,8 @@ module.exports = async (cwd, library) => {
     return accumulator;
   }, []);
 
+  const options = ['USE_PTHREADS=1'].map((warning) => `-s${warning}`);
+
   await spawnPromise(
     'emcc',
     [
@@ -72,6 +74,7 @@ module.exports = async (cwd, library) => {
       '-fexceptions',
       '-fsanitize=address',
       '-g',
+      ...options,
 
       ...library.compilerFlags,
       ...library.definitions.map((definition) => `-D${definition}`),

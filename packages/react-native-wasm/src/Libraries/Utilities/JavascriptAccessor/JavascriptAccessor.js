@@ -64,6 +64,12 @@ mergeInto(LibraryManager.library, {
 
     window[UTF8ToString(name)] = UTF8ToString(value);
 
+    window.nativeCallSyncHook = (moduleID, methodID, params) => {
+      console.log('nativeCallSyncHook', moduleID, '::', methodID, params);
+
+      return Module.nativeCallSyncHook(moduleID, methodID, JSON.stringify(params));
+    }
+
     window['__turboModuleProxy'] = (name) => {
       const createNativeModuleProxy = (nativeModule) => {
         if (!nativeModule) {
@@ -72,6 +78,8 @@ mergeInto(LibraryManager.library, {
 
         return new Proxy(nativeModule, {
           get: function (target, field) {
+            console.log('NativeModuleProxy', name, '::', field);
+
             if (field === 'getConstants') {
               return () => JSON.parse(target.getConstants());
             }
@@ -81,7 +89,11 @@ mergeInto(LibraryManager.library, {
             }
 
             return (...args) => {
-              return target.invoke(field, JSON.stringify(args));
+              const result = target.invoke(field, JSON.stringify(args));
+
+              console.log('NativeModuleProxy', name, '::', field, '==>', result);
+
+              return result;
             };
           },
         });

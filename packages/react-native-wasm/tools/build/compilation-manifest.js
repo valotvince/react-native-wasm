@@ -1,19 +1,21 @@
 const path = require('path');
 const fs = require('fs');
 
-const getFilesFromDir = (dir, extension = '') => {
+const getFilesFromDir = (dir, extension = '.cpp') => {
   return fs
     .readdirSync(dir)
     .filter((fileName) => fileName.endsWith(extension))
     .map((fileName) => path.join(dir, fileName));
 };
 
+const getFilesFromRootDir = (rootDir) => (subdir) => getFilesFromDir(path.join(rootDir, subdir), '.cpp');
+
 const getFmt = (reactNativeWasmDir) => {
   const fmtDir = path.join(reactNativeWasmDir, 'deps', 'fmt');
 
   return {
     name: 'lib-fmt',
-    compilerFlags: [],
+    compilerFlags: ['-pthread'],
     definitions: [],
     includes: [path.join(fmtDir, 'include')],
     sources: getFilesFromDir(path.join(fmtDir, 'src'), '.cc'),
@@ -25,7 +27,7 @@ const getDoubleConversion = (reactNativeWasmDir) => {
 
   return {
     name: 'lib-doubleconversion',
-    compilerFlags: [],
+    compilerFlags: ['-pthread'],
     definitions: ['__x86_64__'],
     includes: ['/usr/local/opt/glog/include', path.join(reactNativeWasmDir, 'deps', 'double-conversion', 'include')],
     sources: getFilesFromDir(doubleConversionDir, '.cc'),
@@ -80,6 +82,8 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
   const reactNativeReactCommonDir = path.join(reactNativeDir, 'ReactCommon');
   const reactNativeCxxReactPath = path.join(reactNativeReactCommonDir, 'cxxreact');
 
+  const getFilesFromReactCommonDir = getFilesFromRootDir(reactNativeReactCommonDir);
+
   return {
     name: 'lib-reactnative',
     definitions: ['__unused=[[maybe_unused]]'],
@@ -98,23 +102,32 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
       ].map((file) => path.join(reactNativeReactCommonDir, file)),
     ],
     sources: [
+      ...getFilesFromReactCommonDir('react/renderer/components/view'),
+      ...getFilesFromReactCommonDir('react/renderer/components/root'),
+      ...getFilesFromReactCommonDir('react/renderer/uimanager'),
+      ...getFilesFromReactCommonDir('react/renderer/componentregistry'),
+      ...getFilesFromReactCommonDir('react/renderer/mounting'),
+      ...getFilesFromReactCommonDir('react/renderer/leakchecker'),
+      ...getFilesFromReactCommonDir('react/renderer/core'),
+      ...getFilesFromReactCommonDir('react/renderer/scheduler'),
+      ...getFilesFromReactCommonDir('react/renderer/debug'),
+      ...getFilesFromReactCommonDir('react/renderer/graphics'),
+      ...getFilesFromReactCommonDir('react/renderer/graphics/platform/cxx/react/renderer/graphics'),
+      ...getFilesFromReactCommonDir('react/renderer/runtimescheduler'),
+      ...getFilesFromReactCommonDir('react/renderer/telemetry'),
+      ...getFilesFromReactCommonDir('react/utils'),
+      ...getFilesFromReactCommonDir('react/config'),
+      ...getFilesFromReactCommonDir('jsi/jsi'),
+      ...getFilesFromReactCommonDir('yoga/yoga'),
+      ...getFilesFromReactCommonDir('yoga/yoga/event'),
+      ...getFilesFromReactCommonDir('yoga/yoga/internal'),
       ...[
-        'react/renderer/components/view/ViewEventEmitter.cpp',
-        'react/renderer/components/view/ViewProps.cpp',
-        'react/renderer/core/RawProps.cpp',
-        'react/renderer/core/EventDispatcher.cpp',
-        'react/renderer/core/ComponentDescriptor.cpp',
-        'react/renderer/core/LayoutMetrics.cpp',
-        'react/renderer/core/RawPropsParser.cpp',
-        'react/renderer/core/Props.cpp',
-        'react/renderer/core/State.cpp',
         'react/bridging/LongLivedObject.cpp',
         'react/nativemodule/samples/ReactCommon/SampleTurboCxxModule.cpp',
         'react/nativemodule/core/ReactCommon/TurboModule.cpp',
         'react/nativemodule/core/ReactCommon/TurboModuleBinding.cpp',
         'reactperflogger/reactperflogger/BridgeNativeModulePerfLogger.cpp',
         'logger/react_native_log.cpp',
-        'jsi/jsi/jsi.cpp',
       ].map((file) => path.join(reactNativeReactCommonDir, file)),
       ...[
         'MethodCall.cpp',
@@ -129,25 +142,33 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
 };
 
 const getReactNativeWasm = (reactNativeWasmDir) => {
+  const getFilesFromReactNativeWasmDir = getFilesFromRootDir(path.join(reactNativeWasmDir, 'src'));
+
   return {
     name: 'app',
     compilerFlags: ['-pthread', '-s', 'USE_SDL=2', '-fexceptions'],
     includes: [],
     definitions: [],
     sources: [
-      'ReactWasmEntry.cpp',
-      'ReactWasmInstance.cpp',
-      'Libraries/Utilities/Timing/Timing.cpp',
-      'Libraries/Utilities/DevSettings/DevSettings.cpp',
-      'Libraries/Utilities/PlatformConstants.cpp',
-      'Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
-      'Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
-      'Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
-      'Libraries/ReactNativeWasm/Turbo/TurboModuleManager.cpp',
-      'Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.cpp',
-      // 'Libraries/ReactNativeWasm/Turbo/TurboModulesProvider.cpp',
-      'Libraries/Components/View/View.cpp',
-    ].map((file) => path.join(reactNativeWasmDir, 'src', file)),
+      ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/UIManager'),
+      ...getFilesFromReactNativeWasmDir('Libraries/Components/View'),
+      ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Config'),
+      ...[
+        'ReactWasmEntry.cpp',
+        'ReactWasmInstance.cpp',
+        'Libraries/Utilities/Timing/Timing.cpp',
+        'Libraries/Utilities/DevSettings/DevSettings.cpp',
+        'Libraries/Utilities/PlatformConstants.cpp',
+        'Libraries/ReactNativeWasm/Scheduler/SchedulerDelegate.cpp',
+        'Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
+        'Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
+        'Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
+        'Libraries/ReactNativeWasm/Turbo/TurboModuleManager.cpp',
+        'Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.cpp',
+        // 'Libraries/ReactNativeWasm/Turbo/TurboModulesProvider.cpp',
+        'Libraries/Components/View/View.cpp',
+      ].map((file) => path.join(reactNativeWasmDir, 'src', file)),
+    ],
   };
 };
 

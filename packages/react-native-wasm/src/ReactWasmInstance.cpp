@@ -53,8 +53,16 @@ std::shared_ptr<facebook::react::NativeModule> turboModuleProxy(std::string name
     return nullptr;
 }
 
-void onBundleLoaded() {
+void nativeCallSyncHook(unsigned int moduleId, unsigned int methodId, std::string jsonArgs) {
+    auto args = folly::parseJson(jsonArgs);
 
+    auto module = ReactNativeWasm::modules->at(moduleId);
+
+    if (!module) {
+        throw std::invalid_argument("Module id " + std::to_string(moduleId) + " doesn't exist");
+    }
+
+    module->invoke(methodId, std::move(args), 100);
 }
 
 EMSCRIPTEN_BINDINGS(ReactWasmInstance) {
@@ -72,6 +80,8 @@ EMSCRIPTEN_BINDINGS(ReactWasmInstance) {
             auto methods = self.getMethods();
             auto it = methods.begin();
 
+            std::cout << "Trying invoking " << self.getName() << "::" << methodName << std::endl;
+
             for (it = methods.begin(); it != methods.end(); ++it) {
                 if (it->name == methodName) {
                     auto reactMethodId = std::distance(methods.begin(), it);
@@ -82,8 +92,9 @@ EMSCRIPTEN_BINDINGS(ReactWasmInstance) {
                 }
             }
 
-            throw std::invalid_argument("Method name " + methodName + " does'nt exist on NativeModule " + self.getName());
+            throw std::invalid_argument("Method name " + methodName + " doesn't exist on NativeModule " + self.getName());
         }));
 
+    emscripten::function("nativeCallSyncHook", &nativeCallSyncHook);
     emscripten::function("__turboModuleProxy", &turboModuleProxy, emscripten::allow_raw_pointers());
 }

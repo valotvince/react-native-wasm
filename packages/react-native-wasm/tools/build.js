@@ -24,7 +24,7 @@ const dependencies = [
 
   await Promise.all(libraries.map((library) => buildLibrary(reactNativeWasmDir, library)));
 
-  const warnings = ['all', 'cast-align', 'over-aligned'].map((warning) => `-W${warning}`);
+  const warnings = ['all'].map((warning) => `-W${warning}`);
   const options = [
     'USE_SDL=2',
     'LLD_REPORT_UNDEFINED=1',
@@ -53,7 +53,7 @@ const dependencies = [
       '-g',
       '-O0',
       '-std=c++17',
-      '--threadprofiler',
+      // '--threadprofiler',
       '--js-library',
       path.join(reactNativeWasmDir, 'src/Libraries/Utilities/JavascriptAccessor/JavascriptAccessor.js'),
 
