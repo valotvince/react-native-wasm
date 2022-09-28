@@ -152,6 +152,7 @@ const getReactNativeWasm = (reactNativeWasmDir) => {
     sources: [
       ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/UIManager'),
       ...getFilesFromReactNativeWasmDir('Libraries/Components/View'),
+      ...getFilesFromReactNativeWasmDir('Libraries/Components/Text'),
       ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Config'),
       ...[
         'ReactWasmEntry.cpp',
@@ -163,7 +164,6 @@ const getReactNativeWasm = (reactNativeWasmDir) => {
         'Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
         'Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
         'Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
-        'Libraries/ReactNativeWasm/Turbo/TurboModuleManager.cpp',
         'Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.cpp',
         // 'Libraries/ReactNativeWasm/Turbo/TurboModulesProvider.cpp',
         'Libraries/Components/View/View.cpp',

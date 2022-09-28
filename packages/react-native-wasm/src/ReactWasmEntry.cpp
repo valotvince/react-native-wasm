@@ -26,7 +26,8 @@
 
 #include "Libraries/Components/Component.hpp"
 #include "Libraries/ReactNativeWasm/Config/ReactNativeConfig.hpp"
-#include "Libraries/Components/View/View.hpp"
+#include "Libraries/Components/View/ViewManager.hpp"
+#include "Libraries/Components/Text/TextManager.hpp"
 #include "Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.hpp"
 #include "Libraries/ReactNativeWasm/Renderer/Renderer.hpp"
 #include "Libraries/ReactNativeWasm/UIManager/UIManagerModule.hpp"
@@ -37,7 +38,7 @@
 
 using SharedNativeModuleVector = std::vector<std::shared_ptr<facebook::react::NativeModule>>;
 using UniqueNativeModuleVector = std::vector<std::unique_ptr<facebook::react::NativeModule>>;
-using SharedReactNativeWasmComponents = std::vector<std::shared_ptr<ReactNativeWasm::Components::Component>>;
+using SharedReactNativeWasmComponentManagers = std::vector<std::shared_ptr<ReactNativeWasm::Components::Manager>>;
 
 std::shared_ptr<facebook::react::Instance> reactInstance;
 std::shared_ptr<ReactNativeWasm::Instance> instance;
@@ -46,7 +47,7 @@ std::shared_ptr<facebook::react::Scheduler> reactScheduler;
 std::shared_ptr<ReactNativeWasm::UIManagerAnimationDelegate> uiManagerAnimationDelegate;
 std::shared_ptr<ReactNativeWasm::SchedulerDelegate> schedulerDelegate;
 
-std::shared_ptr<SharedReactNativeWasmComponents> components;
+std::shared_ptr<SharedReactNativeWasmComponentManagers> componentManagers;
 
 UniqueNativeModuleVector getNativeModules(std::shared_ptr<facebook::react::Instance> instance, std::shared_ptr<ReactNativeWasm::NativeQueue> nativeQueue) {
     UniqueNativeModuleVector modules;
@@ -73,7 +74,7 @@ UniqueNativeModuleVector getNativeModules(std::shared_ptr<facebook::react::Insta
         std::make_unique<facebook::react::CxxNativeModule>(
             instance,
             "UIManager",
-            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), components); },
+            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), componentManagers); },
             nativeQueue
         )
     );
@@ -115,7 +116,7 @@ SharedNativeModuleVector getSharedNativeModules(std::shared_ptr<facebook::react:
         std::make_shared<facebook::react::CxxNativeModule>(
             instance,
             "UIManager",
-            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), components); },
+            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), componentManagers); },
             nativeQueue
         )
     );
@@ -151,11 +152,14 @@ auto createComponentsRegistry() -> std::shared_ptr<facebook::react::ComponentDes
 void run() {
     instance = std::make_shared<ReactNativeWasm::Instance>();
     nativeQueue = std::make_shared<ReactNativeWasm::NativeQueue>();
-    components = std::make_shared<SharedReactNativeWasmComponents>();
     uiManagerAnimationDelegate = std::make_shared<ReactNativeWasm::UIManagerAnimationDelegate>();
     schedulerDelegate = std::make_shared<ReactNativeWasm::SchedulerDelegate>();
 
-    components->push_back(std::make_shared<ReactNativeWasm::Components::View>());
+    componentManagers = std::make_shared<SharedReactNativeWasmComponentManagers>();
+    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::ViewManager>());
+    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>());
+
+    std::cout << "toto"<<std::endl;
 
     reactInstance = std::make_shared<facebook::react::Instance>();
 

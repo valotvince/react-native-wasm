@@ -28,13 +28,11 @@ const getModuleName = (context, originalModuleName) => {
     return originalModuleName;
   }
 
-  const moduleName = path.join(
-    originalModuleDir
-      .replace(`${reactNativeWasmSourcePath}/`, '')
-      .replace(`${reactNativePath}/`, '')
-      .replace(`${reactNativeWasmReactNativePath}/`, ''),
-    originalModuleName,
-  );
+  const moduleName = path
+    .join(originalModuleDir, originalModuleName)
+    .replace(`${reactNativeWasmSourcePath}/`, '')
+    .replace(`${reactNativePath}/`, '')
+    .replace(`${reactNativeWasmReactNativePath}/`, '');
 
   if (fs.existsSync(moduleName)) {
     return moduleName;
@@ -67,6 +65,8 @@ const getModuleName = (context, originalModuleName) => {
   }
 
   if (moduleName.includes('Libraries')) {
+    console.log(moduleName, "isn't implemented");
+
     return path.join(reactNativeWasmSourcePath, 'Libraries/Unimplemented');
   }
 

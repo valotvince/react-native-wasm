@@ -11,8 +11,6 @@
 
 namespace ReactNativeWasm {
     Timing::Timing() {
-        std::cout << "Creating Timing" << std::endl;
-
         timers = std::make_shared<std::vector<Timer>>();
         thread = std::thread(&Timing::loop, std::ref(*this));
     }
@@ -69,11 +67,7 @@ namespace ReactNativeWasm {
             if (instance) {
                 auto args = folly::dynamic::array(timersToFire);
 
-                std::cout << "before call js function" << std::endl;
-
                 instance->callJSFunction("JSTimers", "callTimers", std::move(args));
-
-                std::cout << "after call js function" << std::endl;
             } else {
                 std::cerr << "not locked" << std::endl;
             }
@@ -91,7 +85,7 @@ namespace ReactNativeWasm {
                 std::cerr << "Exception raised in tick" << std::endl;
             }
 
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
 
@@ -111,25 +105,21 @@ namespace ReactNativeWasm {
 
                     // int64_t id, double duration, double jsSchedulingTime, bool repeat
                     // Timer timer = Timer(id, targetTime, repeat);
-
-                    std::cout << "Add timer id:" + std::to_string(id) + " from js scheduling time " + std::to_string(jsSchedulingTime) + " in " + std::to_string(duration) + "ms"  << std::endl;
-
                     std::lock_guard<std::mutex> guard(mutex);
 
-                    std::cout << "After mutex:" << timers->size() << std::endl;
-
-                    timers->push_back(Timer(id, targetTime, duration, repeat));
-
-                    std::cout << "Timer sizes main thread:" << timers->size() << std::endl;
+                    this->timers->push_back(Timer(id, targetTime, duration, repeat));
                 }),
             Method(
                 "deleteTimer",
                 [this](folly::dynamic args) {
                     auto deleteTimerId = facebook::xplat::jsArgAsInt(args, 0);
 
+                    std::lock_guard<std::mutex> guard(mutex);
+
                     for (auto it = this->timers->begin(); it != timers->end(); ++it) {
                         if (it->id == deleteTimerId) {
-                            timers->erase(it);
+                            std::cout << "Timing > Found timer to erase" << std::endl;
+                            this->timers->erase(it);
                             break;
                         }
                     }

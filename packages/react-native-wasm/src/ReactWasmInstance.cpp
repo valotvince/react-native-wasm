@@ -13,7 +13,6 @@
 #include <cxxreact/JsArgumentHelpers.h>
 
 #include "Libraries/Utilities/Timing/Timing.hpp"
-#include "Libraries/ReactNativeWasm/Turbo/TurboModuleManager.hpp"
 #include "Libraries/Utilities/JavascriptAccessor/JavascriptAccessor.hpp"
 
 namespace ReactNativeWasm {
@@ -25,6 +24,7 @@ namespace ReactNativeWasm {
         ReactNativeWasm::JavascriptAccessor::insertScriptTag("react-native.bundle.js");
     };
 
+    int callId = 0;
     std::shared_ptr<facebook::react::ModuleRegistry> registry;
     std::shared_ptr<std::vector<std::shared_ptr<facebook::react::NativeModule>>> modules;
 
@@ -88,7 +88,37 @@ EMSCRIPTEN_BINDINGS(ReactWasmInstance) {
 
                     std::cout << self.getName() << " invoking " << methodName << std::endl;
 
-                    return self.invoke(reactMethodId, std::move(args), 100);
+                    return self.invoke(reactMethodId, std::move(args), ++ReactNativeWasm::callId);
+                }
+            }
+
+            throw std::invalid_argument("Method name " + methodName + " doesn't exist on NativeModule " + self.getName());
+        }))
+        .function("callSerializableNativeHook", emscripten::optional_override([](facebook::react::NativeModule& self, std::string methodName, std::string jsonArgs) {
+            auto args = folly::parseJson(jsonArgs);
+
+            auto methods = self.getMethods();
+            auto it = methods.begin();
+
+            std::cout << "Trying callSerializableNativeHook " << self.getName() << "::" << methodName << std::endl;
+
+            for (it = methods.begin(); it != methods.end(); ++it) {
+                if (it->name == methodName) {
+                    auto reactMethodId = std::distance(methods.begin(), it);
+
+                    std::cout << self.getName() << " callSerializableNativeHook " << methodName << std::endl;
+
+                    auto result = self.callSerializableNativeHook(reactMethodId, std::move(args));
+
+                    if (result.hasValue()) {
+                        std::string resultAsJson(std::make_unique<facebook::react::JSBigStdString>(folly::toJson(result.value()))->c_str());
+
+                        return resultAsJson;
+                    }
+
+                    std::string fake;
+
+                    return fake;
                 }
             }
 

@@ -51,7 +51,7 @@ mergeInto(LibraryManager.library, {
       const decodedMethodName = UTF8ToString(methodName);
       const decodedArgs = JSON.parse(UTF8ToString(args));
 
-      console.warn('fbBatchedBridge', window.__fbBatchedBridge[decodedMethodName], ...decodedArgs);
+      console.log('Debug: fbBatchedBridge', window.__fbBatchedBridge[decodedMethodName], ...decodedArgs);
 
       window.__fbBatchedBridge[decodedMethodName].call(window.__fbBatchedBridge, ...decodedArgs);
     } catch (error) {
@@ -70,43 +70,70 @@ mergeInto(LibraryManager.library, {
       return Module.nativeCallSyncHook(moduleID, methodID, JSON.stringify(params));
     }
 
-    window['__turboModuleProxy'] = (name) => {
-      const createNativeModuleProxy = (nativeModule) => {
-        if (!nativeModule) {
-          return null;
+    const registerMethods = (nativeModuleName, nativeModule, asyncMethods = [],  syncMethods = []) => {
+      syncMethods.forEach((name) => {
+        nativeModule[name] = (...args) => {
+          const result = nativeModule.callSerializableNativeHook(name, JSON.stringify(args));
+
+          if(result) {
+            console.log('NativeModuleProxy', nativeModuleName, '::', name, '=>', result);
+
+            return JSON.parse(result);
+          }
         }
+      });
 
-        return new Proxy(nativeModule, {
-          get: function (target, field) {
-            console.log('NativeModuleProxy', name, '::', field);
+      asyncMethods.forEach((name) => {
+        nativeModule[name] = (...args) => {
+          nativeModule.invoke(name, JSON.stringify(args));
+        }
+      });
+    }
 
-            if (field === 'getConstants') {
-              return () => JSON.parse(target.getConstants());
-            }
+    const createNativeModuleProxy = (name, nativeModule) => {
+      if (!nativeModule) {
+        return null;
+      }
 
-            if (field in target) {
-              return target[field];
-            }
+      return new Proxy(nativeModule, {
+        get: function (target, field) {
+          console.log('NativeModuleProxy', name, '::', field);
 
-            return (...args) => {
-              const result = target.invoke(field, JSON.stringify(args));
+          if (field === 'getConstants') {
+            return () => JSON.parse(target.getConstants());
+          }
 
-              console.log('NativeModuleProxy', name, '::', field, '==>', result);
+          if (field in target) {
+            return target[field];
+          }
 
-              return result;
-            };
-          },
-        });
-      };
+          return (...args) => {
+            target.invoke(field, JSON.stringify(args));
+          };
+        },
+      });
+    };
 
+    window['__turboModuleProxy'] = (name) => {
       const result = Module.__turboModuleProxy(name);
 
       if (result) {
-        return createNativeModuleProxy(result);
+        if (name === 'UIManager') {
+          registerMethods(
+            name,
+            result,
+            ['setChildren', 'createView', 'manageChildren', 'lazilyLoadView', 'updateView', 'focus', 'blur', 'findSubviewIn', 'dispatchViewManagerCommand', 'measure', 'measureInWindow', 'viewIsDescendantOf', 'measureLayout'],
+            ['getConstantsForViewManager']
+          );
+
+          console.log({result});
+        }
+
+        return createNativeModuleProxy(name, result);
       }
 
       if (!result) {
-        console.warn(name, 'Implementation needs to be removed');
+        console.log('Warn:', name, 'Implementation needs to be removed');
 
         return {
           getConstants: () => ({
