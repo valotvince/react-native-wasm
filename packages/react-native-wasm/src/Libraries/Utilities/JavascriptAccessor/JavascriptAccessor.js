@@ -51,7 +51,7 @@ mergeInto(LibraryManager.library, {
       const decodedMethodName = UTF8ToString(methodName);
       const decodedArgs = JSON.parse(UTF8ToString(args));
 
-      console.log('Debug: fbBatchedBridge', window.__fbBatchedBridge[decodedMethodName], ...decodedArgs);
+      console.log('Debug: fbBatchedBridge', decodedMethodName, ...decodedArgs);
 
       window.__fbBatchedBridge[decodedMethodName].call(window.__fbBatchedBridge, ...decodedArgs);
     } catch (error) {
@@ -84,9 +84,9 @@ mergeInto(LibraryManager.library, {
       });
 
       asyncMethods.forEach((name) => {
-        nativeModule[name] = (...args) => {
-          nativeModule.invoke(name, JSON.stringify(args));
-        }
+          nativeModule[name] = (...args) => {
+            nativeModule.invoke(name, JSON.stringify(args));
+          }
       });
     }
 
@@ -97,8 +97,6 @@ mergeInto(LibraryManager.library, {
 
       return new Proxy(nativeModule, {
         get: function (target, field) {
-          console.log('NativeModuleProxy', name, '::', field);
-
           if (field === 'getConstants') {
             return () => JSON.parse(target.getConstants());
           }
@@ -125,8 +123,6 @@ mergeInto(LibraryManager.library, {
             ['setChildren', 'createView', 'manageChildren', 'lazilyLoadView', 'updateView', 'focus', 'blur', 'findSubviewIn', 'dispatchViewManagerCommand', 'measure', 'measureInWindow', 'viewIsDescendantOf', 'measureLayout'],
             ['getConstantsForViewManager']
           );
-
-          console.log({result});
         }
 
         return createNativeModuleProxy(name, result);

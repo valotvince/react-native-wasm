@@ -6,15 +6,15 @@
 #include <folly/dynamic.h>
 
 namespace ReactNativeWasm::Components {
-    class TextShadowNode : public ShadowNode {
+    class VirtualTextShadowNode : public ShadowNode {
         public:
-            TextShadowNode() {};
+            VirtualTextShadowNode() {};
             void createView(folly::dynamic props) override;
     };
 
-    class TextManager : public Manager {
+    class VirtualTextManager : public Manager {
         public:
-            TextManager(std::shared_ptr<ReactNativeWasm::Renderer> renderer): Manager(renderer) {};
+            VirtualTextManager(std::shared_ptr<ReactNativeWasm::Renderer> renderer): Manager(renderer) {};
 
             std::string getName() override;
             folly::dynamic getConstants() override;

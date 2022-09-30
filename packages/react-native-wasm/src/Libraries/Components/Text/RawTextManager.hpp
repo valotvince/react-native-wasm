@@ -2,19 +2,25 @@
 
 #include "../ComponentManager.hpp"
 #include "../ShadowNode.hpp"
+#include "../ComponentView.hpp"
 
 #include <folly/dynamic.h>
 
 namespace ReactNativeWasm::Components {
-    class TextShadowNode : public ShadowNode {
+    class RawTextView : public ComponentView {
         public:
-            TextShadowNode() {};
+            RawTextView(folly::dynamic props): ComponentView(props) {};
+    };
+
+    class RawTextShadowNode : public ShadowNode {
+        public:
+            RawTextShadowNode() {};
             void createView(folly::dynamic props) override;
     };
 
-    class TextManager : public Manager {
+    class RawTextManager : public Manager {
         public:
-            TextManager(std::shared_ptr<ReactNativeWasm::Renderer> renderer): Manager(renderer) {};
+            RawTextManager(std::shared_ptr<ReactNativeWasm::Renderer> renderer): Manager(renderer) {};
 
             std::string getName() override;
             folly::dynamic getConstants() override;

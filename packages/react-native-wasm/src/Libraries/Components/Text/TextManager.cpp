@@ -3,9 +3,11 @@
 #include <iostream>
 
 namespace ReactNativeWasm::Components {
-    TextManager::TextManager() {}
+    void TextShadowNode::createView(folly::dynamic props) {
 
-    const char *TextManager::Name = "RCTVirtualText";
+    }
+
+    const char *TextManager::Name = "RCTText";
 
     std::string TextManager::getName() {
         return TextManager::Name;
@@ -21,7 +23,11 @@ namespace ReactNativeWasm::Components {
         return constants;
     }
 
-    void createView() {
+    ShadowNode* TextManager::createShadow() {
+        auto node = new TextShadowNode();
 
+        nodes->push_back(node);
+
+        return node;
     }
 }

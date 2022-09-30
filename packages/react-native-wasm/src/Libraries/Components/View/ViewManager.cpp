@@ -1,10 +1,16 @@
 #include "ViewManager.hpp"
+#include "../../ReactNativeWasm/Renderer/Renderer.hpp"
 
 #include <iostream>
 
 namespace ReactNativeWasm::Components {
-    ViewManager::ViewManager() {
-        std::cout << "Creating ViewManager::ViewManager() " << std::endl;
+    class ViewShadowNode : public ShadowNode {
+        public:
+            ViewShadowNode() {};
+            void createView(folly::dynamic props) override;
+    };
+
+    void ViewShadowNode::createView(folly::dynamic props) {
     }
 
     const char *ViewManager::Name = "RCTView";
@@ -27,7 +33,9 @@ namespace ReactNativeWasm::Components {
         return constants;
     }
 
-    void createView() {
+    ShadowNode* ViewManager::createShadow() {
+        auto node = new ViewShadowNode();
 
+        return node;
     }
 }

@@ -52,16 +52,29 @@ namespace ReactNativeWasm {
             Method(
                 "createView",
                 [this](folly::dynamic args) {
-                    std::cout << "createView called" << std::endl;
-
                     auto reactTag = facebook::xplat::jsArgAsInt(args, 0);
                     auto viewName = facebook::xplat::jsArgAsString(args, 1);
                     auto rootTag = facebook::xplat::jsArgAsInt(args, 2);
                     auto props = facebook::xplat::jsArgAsDynamic(args, 3);
 
-                    std::cout << "reactTag:" << std::to_string(reactTag) << " viewName:" << viewName << " rootTag:" << std::to_string(rootTag) << " props:" << folly::toJson(props).c_str() << std::endl;
+                    std::cout << "UIManagerModule::createView reactTag:" << std::to_string(reactTag) << " viewName:" << viewName << " rootTag:" << std::to_string(rootTag) << " props:" << folly::toJson(props).c_str() << std::endl;
 
-                    auto manager = this->getManager(viewName);
+                    auto viewManager = this->getManager(viewName);
+
+                    auto node = viewManager->createShadow();
+                    node->className = std::move(viewName);
+                    node->tag = reactTag;
+                    node->rootTag = rootTag;
+                    // node->viewManager = viewManager;
+
+                    node->createView(std::move(props));
+
+                    this->renderer->render(node);
+
+                    std::cout << "UIManagerModule::UIManagerModule nodes size 2 " << std::endl;
+                    std::cout << std::to_string(this->nodes->size()) << std::endl;
+
+                    this->nodes->insert(std::make_pair(reactTag, node));
                 }
             ),
             Method(
@@ -79,7 +92,9 @@ namespace ReactNativeWasm {
                 "setChildren",
                 [this](folly::dynamic args) {
                     auto containerTag = facebook::xplat::jsArgAsInt(args, 0);
-                    auto reactTags = facebook::xplat::jsArgAsDynamic(args, 1);
+                    auto reactTags = facebook::xplat::jsArgAsArray(args, 1);
+
+                    std::cout << "UIManagerModule::setChildren 2 " << folly::toJson(args) << std::endl;
                 }
             ),
             Method(
@@ -88,6 +103,16 @@ namespace ReactNativeWasm {
                     auto reactTag = facebook::xplat::jsArgAsInt(args, 0);
                     auto viewName = facebook::xplat::jsArgAsString(args, 1);
                     auto props = facebook::xplat::jsArgAsDynamic(args, 2);
+
+                    std::cout << "UIManagerModule::updateView " << folly::toJson(args) << std::endl;
+
+                    auto node = this->nodes->find(reactTag);
+
+                    if (node != this->nodes->end()) {
+                        node->second->getView()->props = std::move(props);
+
+                        this->renderer->render(node->second);
+                    }
                 }
             ),
             Method(

@@ -1,12 +1,26 @@
+#pragma once
+
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <mutex>
 
-#ifndef FUNCTIONS_H
-#define FUNCTIONS_H
+#include "../../Components/ShadowNode.hpp"
 
-namespace ReactNativeWasm::Renderer {
-    void setRenderer(SDL_Renderer **r);
+namespace ReactNativeWasm {
+    class Renderer {
+        public:
+            Renderer();
 
-    bool render(float top, float left, float width, float height);
+            void render(ReactNativeWasm::Components::ShadowNode *);
+            void flush();
+
+        private:
+            SDL_Renderer *renderer;
+            SDL_Window *window;
+
+            std::mutex renderMutex = std::mutex();
+
+            void renderText(ReactNativeWasm::Components::ShadowNode *);
+            void renderView(ReactNativeWasm::Components::ShadowNode *);
+    };
 }
-
-#endif

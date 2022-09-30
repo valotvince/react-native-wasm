@@ -1,10 +1,11 @@
 
 #include <iostream>
-#include <SDL2/SDL.h>
 #include <thread>
 #include <chrono>
+#include <mutex>
 #include <emscripten/emscripten.h>
 #include <emscripten/bind.h>
+#include <emscripten/threading.h>
 
 #include <cxxreact/NativeModule.h>
 #include <cxxreact/CxxNativeModule.h>
@@ -24,10 +25,11 @@
 #include "Libraries/Utilities/PlatformConstants.hpp"
 #include "Libraries/Utilities/Timing/Timing.hpp"
 
-#include "Libraries/Components/Component.hpp"
 #include "Libraries/ReactNativeWasm/Config/ReactNativeConfig.hpp"
 #include "Libraries/Components/View/ViewManager.hpp"
 #include "Libraries/Components/Text/TextManager.hpp"
+#include "Libraries/Components/Text/VirtualTextManager.hpp"
+#include "Libraries/Components/Text/RawTextManager.hpp"
 #include "Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.hpp"
 #include "Libraries/ReactNativeWasm/Renderer/Renderer.hpp"
 #include "Libraries/ReactNativeWasm/UIManager/UIManagerModule.hpp"
@@ -48,6 +50,8 @@ std::shared_ptr<ReactNativeWasm::UIManagerAnimationDelegate> uiManagerAnimationD
 std::shared_ptr<ReactNativeWasm::SchedulerDelegate> schedulerDelegate;
 
 std::shared_ptr<SharedReactNativeWasmComponentManagers> componentManagers;
+
+std::shared_ptr<ReactNativeWasm::Renderer> renderer;
 
 UniqueNativeModuleVector getNativeModules(std::shared_ptr<facebook::react::Instance> instance, std::shared_ptr<ReactNativeWasm::NativeQueue> nativeQueue) {
     UniqueNativeModuleVector modules;
@@ -74,7 +78,7 @@ UniqueNativeModuleVector getNativeModules(std::shared_ptr<facebook::react::Insta
         std::make_unique<facebook::react::CxxNativeModule>(
             instance,
             "UIManager",
-            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), componentManagers); },
+            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), componentManagers, renderer); },
             nativeQueue
         )
     );
@@ -116,7 +120,7 @@ SharedNativeModuleVector getSharedNativeModules(std::shared_ptr<facebook::react:
         std::make_shared<facebook::react::CxxNativeModule>(
             instance,
             "UIManager",
-            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), componentManagers); },
+            []() { return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), componentManagers, renderer); },
             nativeQueue
         )
     );
@@ -156,8 +160,10 @@ void run() {
     schedulerDelegate = std::make_shared<ReactNativeWasm::SchedulerDelegate>();
 
     componentManagers = std::make_shared<SharedReactNativeWasmComponentManagers>();
-    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::ViewManager>());
-    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>());
+    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::ViewManager>(renderer));
+    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::RawTextManager>(renderer));
+    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::VirtualTextManager>(renderer));
+    componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>(renderer));
 
     std::cout << "toto"<<std::endl;
 
@@ -259,33 +265,20 @@ void run() {
     // while (true) {}
 }
 
+// SDL_Window *window;
+// SDL_Renderer *renderer;
+
+void loop() {
+    renderer->flush();
+}
+
 int main(int argc, char* argv[]) {
-    // Initialize SDL graphics subsystem.
-    SDL_Init(SDL_INIT_VIDEO);
-
-    // Initialize a 300x300 window and a renderer.
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    SDL_CreateWindowAndRenderer(300, 300, 0, &window, &renderer);
-
-    ReactNativeWasm::Renderer::setRenderer(&renderer);
+    renderer = std::make_shared<ReactNativeWasm::Renderer>();
 
     run();
 
-    std::cout << "Hello World 1" << std::endl;
-    // std::cout << "The time from Epoch is: " << helloworld::time() << std::endl;
-
-
-    // Set a color for drawing matching the earlier `ctx.fillStyle = "green"`.
-    SDL_SetRenderDrawColor(renderer, /* RGBA: green */ 0x00, 0x80, 0x00, 0xFF);
-    // Create and draw a rectangle like in the earlier `ctx.fillRect()`.
-    SDL_Rect rect = {.x = 10, .y = 10, .w = 10, .h = 10};
-    SDL_RenderFillRect(renderer, &rect);
-
-    // Render everything from a buffer to the actual screen.
-    SDL_RenderPresent(renderer);
-
-    emscripten_exit_with_live_runtime();
+    emscripten_set_main_loop(loop, 0, 1);
+    // emscripten_exit_with_live_runtime();
 
     return 0;
 }

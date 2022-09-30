@@ -27,8 +27,10 @@ const dependencies = [
   const warnings = ['all'].map((warning) => `-W${warning}`);
   const options = [
     'USE_SDL=2',
+    'USE_SDL_TTF=2',
+    'USE_SDL_IMAGE=2',
     'LLD_REPORT_UNDEFINED=1',
-    'PTHREAD_POOL_SIZE=4',
+    'PTHREAD_POOL_SIZE=3',
     'USE_PTHREADS=1',
     'ALLOW_BLOCKING_ON_MAIN_THREAD=0',
     // 'PROXY_TO_PTHREAD',
@@ -36,8 +38,11 @@ const dependencies = [
     'NO_EXIT_RUNTIME=1',
     'WARN_UNALIGNED=1',
     'ASSERTIONS=2',
-    'ASYNCIFY',
+    // 'ASYNCIFY',
     'ALLOW_MEMORY_GROWTH=1',
+    'STACK_OVERFLOW_CHECK=1',
+    // 'MIN_WEBGL_VERSION=2',
+    // 'MAX_WEBGL_VERSION=2',
   ].map((warning) => `-s${warning}`);
 
   await spawnPromise(
@@ -56,6 +61,9 @@ const dependencies = [
       // '--threadprofiler',
       '--js-library',
       path.join(reactNativeWasmDir, 'src/Libraries/Utilities/JavascriptAccessor/JavascriptAccessor.js'),
+      '--preload-file',
+      'Resources',
+      '--use-preload-plugins',
 
       ...libraries.map(({ name }) => `build/${name}/${name}.a`),
 

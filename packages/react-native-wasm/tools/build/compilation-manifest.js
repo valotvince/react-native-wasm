@@ -165,8 +165,6 @@ const getReactNativeWasm = (reactNativeWasmDir) => {
         'Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
         'Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
         'Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.cpp',
-        // 'Libraries/ReactNativeWasm/Turbo/TurboModulesProvider.cpp',
-        'Libraries/Components/View/View.cpp',
       ].map((file) => path.join(reactNativeWasmDir, 'src', file)),
     ],
   };
