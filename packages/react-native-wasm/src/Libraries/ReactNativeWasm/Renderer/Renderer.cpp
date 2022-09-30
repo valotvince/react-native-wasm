@@ -30,15 +30,6 @@ namespace ReactNativeWasm {
 
         // Initialize a 300x300 window and a renderer.
         SDL_CreateWindowAndRenderer(300, 300, 0, &window, &renderer);
-        SDL_version compiled;
-        SDL_version linked;
-
-        SDL_VERSION(&compiled);
-        SDL_GetVersion(&linked);
-
-        std::cout << "We compiled against SDL2 version" << std::to_string(compiled.major) << "." << std::to_string(compiled.minor) << "." << std::to_string(compiled.patch) << std::endl;
-
-        std::cout << "Rendered::createRenderer" << std::endl;
     }
 
     void Renderer::flush() {
@@ -47,13 +38,11 @@ namespace ReactNativeWasm {
         // SDL_RenderClear(renderer);
         SDL_RenderPresent(renderer);
 
-        std::cout << "FLUSH"<<std::endl;
+        std::cout << "FLUSH" << std::endl;
     }
 
     void Renderer::renderText(ReactNativeWasm::Components::ShadowNode * textNode) {
         std::lock_guard<std::mutex> guard(renderMutex);
-
-        std::cout << "thread " << std::this_thread::get_id() << " rendering text...\n";
 
         auto view = textNode->getView();
 
@@ -98,16 +87,12 @@ namespace ReactNativeWasm {
         // and coordinate of your texture
         SDL_RenderCopyF(renderer, Message, NULL, &Message_rect);
 
-        std::cout << "FINISHED RAW TEXT DISPLAY" << std::endl;
-
         // // Don't forget to free your surface and texture
         SDL_FreeSurface(surfaceMessage);
         MAIN_SDL_DestroyTexture(Message);
     }
 
     void Renderer::renderView(ReactNativeWasm::Components::ShadowNode * node) {
-        std::cout << "thread " << std::this_thread::get_id() << " rendering view...\n";
-
         std::lock_guard<std::mutex> guard(renderMutex);
 
         // Set a color for drawing matching the earlier `ctx.fillStyle = "green"`.
@@ -118,38 +103,11 @@ namespace ReactNativeWasm {
         SDL_RenderFillRect(renderer, &rect);
     }
 
-    void Renderer::__render(ReactNativeWasm::Components::ShadowNode * node) {
+    void Renderer::render(ReactNativeWasm::Components::ShadowNode * node) {
         if (node->className == "RCTRawText") {
             renderText(node);
         } else {
             renderView(node);
         }
-    }
-
-    // void renderInMain(ReactNativeWasm::Renderer * renderer, ReactNativeWasm::Components::ShadowNode * node) {
-    //     renderer->render(node);
-    // }
-
-    void Renderer::render(ReactNativeWasm::Components::ShadowNode * node) {
-        // auto that = std::shared_ptr<ReactNativeWasm::Renderer>(this);
-
-        // if (emscripten_is_main_runtime_thread()) {
-        //     __render(node);
-        // } else {
-        //     emscripten_sync_run_in_main_runtime_thread(
-        //         EM_FUNC_SIG_VI,
-        //         ReactNativeWasm::renderInMain,
-        //         *that,
-        //         (uint32_t)node
-        //     );
-        // }
-
-        __render(node);
-
-        // if (node->className == "RCTRawText") {
-        //     renderText(node);
-        // } else {
-        //     renderView(node);
-        // }
     }
 }
