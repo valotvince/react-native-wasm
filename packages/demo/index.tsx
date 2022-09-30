@@ -7,7 +7,7 @@ const Demo = () => {
   useEffect(() => {
     const id = setInterval(() => {
       setTimer((previousTimer) => previousTimer + 1);
-    }, 1000);
+    }, 5000);
 
     return () => clearInterval(id);
   }, []);

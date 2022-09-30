@@ -1,6 +1,9 @@
 #include <chrono>
+#include <ctime>
 #include <folly/dynamic.h>
+#include <folly/json.h>
 #include <iostream>
+#include <sys/time.h>
 #include <thread>
 
 #include "Timing.hpp"
@@ -31,7 +34,9 @@ void Timing::tick() {
   for (auto it = timers->begin(); it != timers->end();) {
     auto timer = it;
 
-    auto now = std::chrono::system_clock::now().time_since_epoch().count();
+    auto now =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+        .count();
 
     if (now >= timer->targetTime) {
       timersToFire.push_back(timer->id);
@@ -77,7 +82,7 @@ void Timing::loop() {
       std::cerr << "Exception raised in tick" << std::endl;
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
 
@@ -86,14 +91,12 @@ auto Timing::getMethods() -> std::vector<Method> {
     Method(
       "createTimer",
       [this](folly::dynamic args) {
-        auto now = std::chrono::system_clock::now().time_since_epoch().count();
-
         auto id = facebook::xplat::jsArgAsInt(args, 0);
         auto duration = facebook::xplat::jsArgAsDouble(args, 1);
         auto jsSchedulingTime = facebook::xplat::jsArgAsDouble(args, 2);
         auto repeat = facebook::xplat::jsArgAsBool(args, 3);
 
-        auto targetTime = now + duration;
+        auto targetTime = jsSchedulingTime + duration;
 
         // int64_t id, double duration, double jsSchedulingTime, bool repeat
         // Timer timer = Timer(id, targetTime, repeat);
