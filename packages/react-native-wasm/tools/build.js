@@ -4,11 +4,7 @@ const spawnPromise = require('./spawn-promise');
 const getCompilationManifest = require('./build/compilation-manifest');
 const buildLibrary = require('./build/build-library');
 
-const appDir = process.cwd();
-const reactNativeWasmDir = path.resolve(__dirname, '..');
-const reactNativeDir = path.resolve(path.join(appDir, 'node_modules', 'react-native'));
-
-module.exports = async () => {
+module.exports = async ({ appDir, reactNativeWasmDir, reactNativeDir }) => {
   const { libraries } = getCompilationManifest(reactNativeWasmDir, reactNativeDir);
 
   await Promise.all(libraries.map((library) => buildLibrary(reactNativeWasmDir, library)));
