@@ -142,6 +142,8 @@ struct InstanceCallback : public facebook::react::InstanceCallback {
   void onBatchComplete() override {
     // Should render the layout on batch complete
     std::cout << "onBatchComplete" << std::endl;
+
+    renderer->flush();
   }
   void incrementPendingJSCalls() override {}
   void decrementPendingJSCalls() override {}
@@ -176,14 +178,8 @@ void run() {
 
     folly::dynamic configStore = folly::dynamic::object();
 
-    try {
-        configStore.insert("react_fabric:remove_outstanding_surfaces_on_destruction_ios", true);
-        configStore.insert("react_native_new_architecture:enable_call_immediates_ios", true);
-    } catch (std::exception e) {
-        std::cerr << "Exception 2: " << e.what() << std::endl;
-
-        throw e;
-    }
+    configStore.insert("react_fabric:remove_outstanding_surfaces_on_destruction_ios", true);
+    configStore.insert("react_native_new_architecture:enable_call_immediates_ios", true);
 
     std::shared_ptr<const facebook::react::ReactNativeConfig> config =
         std::make_shared<const ReactNativeWasm::ReactNativeConfig>(configStore);
@@ -264,15 +260,6 @@ void run() {
     instance->loadBundle();
 
     std::cout << "After loadBundle" << std::endl;
-
-    // while (true) {}
-}
-
-// SDL_Window *window;
-// SDL_Renderer *renderer;
-
-void loop() {
-    renderer->flush();
 }
 
 int main(int argc, char* argv[]) {
@@ -280,8 +267,7 @@ int main(int argc, char* argv[]) {
 
     run();
 
-    emscripten_set_main_loop(loop, 0, 1);
-    // emscripten_exit_with_live_runtime();
+    emscripten_exit_with_live_runtime();
 
     return 0;
 }
