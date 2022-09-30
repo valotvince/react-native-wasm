@@ -2,7 +2,7 @@
   "name": "@valotvince/react-native-wasm-demo",
   "version": "1.0.0",
   "scripts": {
-    "start": "react-native-wasm-run"
+    "start": "react-native-wasm-start"
   },
   "private": true,
   "main": "./index.tsx",

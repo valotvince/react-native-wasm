@@ -2,7 +2,7 @@
   "name": "@valotvince/react-native-wasm",
   "version": "0.0.1",
   "bin": {
-    "react-native-wasm-run": "./tools/build.js"
+    "react-native-wasm-start": "./tools/start.js"
   },
   "main": "./index.wasm.js",
   "private": true,

@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 const path = require('path');
 
 const spawnPromise = require('./spawn-promise');
@@ -10,7 +8,7 @@ const appDir = process.cwd();
 const reactNativeWasmDir = path.resolve(__dirname, '..');
 const reactNativeDir = path.resolve(path.join(appDir, 'node_modules', 'react-native'));
 
-(async () => {
+module.exports = async () => {
   const { libraries } = getCompilationManifest(reactNativeWasmDir, reactNativeDir);
 
   await Promise.all(libraries.map((library) => buildLibrary(reactNativeWasmDir, library)));
@@ -77,4 +75,4 @@ const reactNativeDir = path.resolve(path.join(appDir, 'node_modules', 'react-nat
     '--bundle-output',
     path.resolve(path.join(reactNativeWasmDir, 'dist', 'react-native.bundle.js')),
   ]);
-})();
+};
