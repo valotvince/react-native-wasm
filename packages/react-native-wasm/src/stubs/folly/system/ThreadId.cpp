@@ -19,11 +19,7 @@
 #include <folly/portability/PThread.h>
 
 namespace folly {
-uint64_t getCurrentThreadID() {
-  return uint64_t(pthread_self());
-}
+uint64_t getCurrentThreadID() { return uint64_t(pthread_self()); }
 
-uint64_t getOSThreadID() {
-  return uint64_t(pthread_self());
-}
+uint64_t getOSThreadID() { return uint64_t(pthread_self()); }
 } // namespace folly

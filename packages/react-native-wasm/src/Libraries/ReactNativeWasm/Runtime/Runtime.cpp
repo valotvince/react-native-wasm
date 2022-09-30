@@ -1,12 +1,12 @@
 #include "Runtime.hpp"
 
 namespace ReactNativeWasm {
-    Runtime::Runtime() {};
+Runtime::Runtime(){};
 
-    // jsi::Function createFunctionFromHostFunction(
-    //   const jsi::PropNameID &name,
-    //   unsigned int paramCount,
-    //   jsi::HostFunctionType func) {
+// jsi::Function createFunctionFromHostFunction(
+//   const jsi::PropNameID &name,
+//   unsigned int paramCount,
+//   jsi::HostFunctionType func) {
 
-    //   };
-}
+//   };
+} // namespace ReactNativeWasm

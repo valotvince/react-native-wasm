@@ -7,20 +7,20 @@
 #include "../../Components/ShadowNode.hpp"
 
 namespace ReactNativeWasm {
-    class Renderer {
-        public:
-            Renderer();
+class Renderer {
+public:
+  Renderer();
 
-            void render(ReactNativeWasm::Components::ShadowNode *);
-            void flush();
+  void render(ReactNativeWasm::Components::ShadowNode *);
+  void flush();
 
-        private:
-            SDL_Renderer *renderer;
-            SDL_Window *window;
+private:
+  SDL_Renderer *renderer;
+  SDL_Window *window;
 
-            std::mutex renderMutex = std::mutex();
+  std::mutex renderMutex = std::mutex();
 
-            void renderText(ReactNativeWasm::Components::ShadowNode *);
-            void renderView(ReactNativeWasm::Components::ShadowNode *);
-    };
-}
+  void renderText(ReactNativeWasm::Components::ShadowNode *);
+  void renderView(ReactNativeWasm::Components::ShadowNode *);
+};
+} // namespace ReactNativeWasm
