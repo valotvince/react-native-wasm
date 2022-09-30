@@ -10,9 +10,11 @@ const appDir = process.cwd();
 const reactNativeWasmDir = path.resolve(__dirname, '..');
 const reactNativeDir = path.resolve(path.join(appDir, 'node_modules', 'react-native'));
 
-const options = { appDir, reactNativeWasmDir, reactNativeDir };
+const argv = process.argv.slice(2);
 
 const start = async () => {
+  const options = { appDir, reactNativeWasmDir, reactNativeDir, debug: !!argv['--debug'] };
+
   await deps(options);
   await build(options);
 

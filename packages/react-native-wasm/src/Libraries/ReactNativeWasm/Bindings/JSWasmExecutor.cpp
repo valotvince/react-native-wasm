@@ -78,10 +78,12 @@ namespace ReactNativeWasm {
             arguments
         );
 
-        ReactNativeWasm::JavascriptAccessor::fbBatchedBridge(
+        const char * result = ReactNativeWasm::JavascriptAccessor::fbBatchedBridge(
             "callFunctionReturnFlushedQueue",
             folly::toJson(params).c_str()
         );
+
+        delegate->callNativeModules(*this, folly::parseJson(result), true);
     }
 
     /**
@@ -98,10 +100,12 @@ namespace ReactNativeWasm {
             arguments
         );
 
-        ReactNativeWasm::JavascriptAccessor::fbBatchedBridge(
+        const char * result = ReactNativeWasm::JavascriptAccessor::fbBatchedBridge(
             "invokeCallbackAndReturnFlushedQueue",
             folly::toJson(params).c_str()
         );
+
+        delegate->callNativeModules(*this, folly::parseJson(result), true);
     }
 
     void JSWasmExecutor::setGlobalVariable(

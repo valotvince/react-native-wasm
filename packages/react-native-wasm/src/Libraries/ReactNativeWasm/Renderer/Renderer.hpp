@@ -22,5 +22,7 @@ namespace ReactNativeWasm {
 
             void renderText(ReactNativeWasm::Components::ShadowNode *);
             void renderView(ReactNativeWasm::Components::ShadowNode *);
+
+            void __render(ReactNativeWasm::Components::ShadowNode * node);
     };
 }

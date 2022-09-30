@@ -53,16 +53,29 @@ std::shared_ptr<facebook::react::NativeModule> turboModuleProxy(std::string name
     return nullptr;
 }
 
-void nativeCallSyncHook(unsigned int moduleId, unsigned int methodId, std::string jsonArgs) {
+std::string nativeCallSyncHook(unsigned int moduleId, unsigned int methodId, std::string jsonArgs) {
+    std::cout << "nativeCallSyncHook:: " << std::to_string(moduleId) << "::" << std::to_string(methodId) << "==>" << jsonArgs << std::endl;
+
     auto args = folly::parseJson(jsonArgs);
 
     auto module = ReactNativeWasm::modules->at(moduleId);
 
     if (!module) {
+        std::cout << "nativeCallSyncHook::Error " << "Module id " + std::to_string(moduleId) + " doesn't exist" << std::endl;
         throw std::invalid_argument("Module id " + std::to_string(moduleId) + " doesn't exist");
     }
 
-    module->invoke(methodId, std::move(args), 100);
+    auto result = module->callSerializableNativeHook(methodId, std::move(args));
+
+    if (result.hasValue()) {
+        std::string resultAsJson(std::make_unique<facebook::react::JSBigStdString>(folly::toJson(result.value()))->c_str());
+
+        return resultAsJson;
+    }
+
+    std::string fake;
+
+    return fake;
 }
 
 EMSCRIPTEN_BINDINGS(ReactWasmInstance) {
@@ -95,12 +108,12 @@ EMSCRIPTEN_BINDINGS(ReactWasmInstance) {
             throw std::invalid_argument("Method name " + methodName + " doesn't exist on NativeModule " + self.getName());
         }))
         .function("callSerializableNativeHook", emscripten::optional_override([](facebook::react::NativeModule& self, std::string methodName, std::string jsonArgs) {
+            std::cout << "Trying callSerializableNativeHook " << self.getName() << "::" << methodName << std::endl;
+
             auto args = folly::parseJson(jsonArgs);
 
             auto methods = self.getMethods();
             auto it = methods.begin();
-
-            std::cout << "Trying callSerializableNativeHook " << self.getName() << "::" << methodName << std::endl;
 
             for (it = methods.begin(); it != methods.end(); ++it) {
                 if (it->name == methodName) {

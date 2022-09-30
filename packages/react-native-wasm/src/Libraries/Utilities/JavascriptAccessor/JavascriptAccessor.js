@@ -53,21 +53,44 @@ mergeInto(LibraryManager.library, {
 
       console.log('Debug: fbBatchedBridge', decodedMethodName, ...decodedArgs);
 
-      window.__fbBatchedBridge[decodedMethodName].call(window.__fbBatchedBridge, ...decodedArgs);
+      const result = window.__fbBatchedBridge[decodedMethodName].call(window.__fbBatchedBridge, ...decodedArgs);
+
+      console.log('Debug: fbBatchedBridge result:', result);
+
+      return allocateUTF8(JSON.stringify(result));
     } catch (error) {
       console.error(error);
     }
   },
   setGlobalVariable__proxy: 'sync',
   setGlobalVariable: function (name, value) {
-    console.log(typeof window, typeof global, { Module });
+    const decodedName = UTF8ToString(name);
+    const decodedValue = UTF8ToString(value);
 
-    window[UTF8ToString(name)] = UTF8ToString(value);
+    try {
+      window[decodedName] = JSON.parse(decodedValue);
+    } catch {
+      window[decodedName] = decodedValue
+    }
 
-    window.nativeCallSyncHook = (moduleID, methodID, params) => {
-      console.log('nativeCallSyncHook', moduleID, '::', methodID, params);
+    if (!window.nativeCallSyncHook) {
+      window.nativeCallSyncHook = (moduleID, methodID, params) => {
+        console.log('nativeCallSyncHook', moduleID, '::', methodID, params);
 
-      return Module.nativeCallSyncHook(moduleID, methodID, JSON.stringify(params));
+        const result = Module.nativeCallSyncHook(moduleID, methodID, JSON.stringify(params));
+
+        console.log('nativeCallSyncHook result ', JSON.parse(result));
+
+        if (result) {
+          return JSON.parse(result);
+        }
+
+        return result;
+      }
+    }
+
+    if (window.__turboModuleProxy) {
+      return;
     }
 
     const registerMethods = (nativeModuleName, nativeModule, asyncMethods = [],  syncMethods = []) => {
@@ -112,7 +135,7 @@ mergeInto(LibraryManager.library, {
       });
     };
 
-    window['__turboModuleProxy'] = (name) => {
+    window.__turboModuleProxy = (name) => {
       const result = Module.__turboModuleProxy(name);
 
       if (result) {

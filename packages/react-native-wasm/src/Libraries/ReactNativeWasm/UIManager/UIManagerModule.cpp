@@ -32,6 +32,8 @@ namespace ReactNativeWasm {
             Method(
                 "getConstantsForViewManager",
                 [this](folly::dynamic args) {
+                    std::cout << "UIManagerModule::getConstantsForViewManager " << folly::toJson(args) << std::endl;
+
                     auto viewManagerName = facebook::xplat::jsArgAsString(args, 0);
 
                     auto manager = this->getManager(viewManagerName);

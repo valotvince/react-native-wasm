@@ -3,6 +3,25 @@
 
 #include "Renderer.hpp"
 #include <folly/json.h>
+#include <thread>
+
+
+SDL_Texture* MAIN_SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface) {
+    return (SDL_Texture *)emscripten_sync_run_in_main_runtime_thread(
+        EM_FUNC_SIG_III,
+        SDL_CreateTextureFromSurface,
+        (uint32_t)renderer,
+        (uint32_t)surface
+    );
+}
+
+void MAIN_SDL_DestroyTexture(SDL_Texture* texture) {
+    emscripten_sync_run_in_main_runtime_thread(
+        EM_FUNC_SIG_VI,
+        SDL_DestroyTexture,
+        (uint32_t)texture
+    );
+}
 
 namespace ReactNativeWasm {
     Renderer::Renderer() {
@@ -11,6 +30,13 @@ namespace ReactNativeWasm {
 
         // Initialize a 300x300 window and a renderer.
         SDL_CreateWindowAndRenderer(300, 300, 0, &window, &renderer);
+        SDL_version compiled;
+        SDL_version linked;
+
+        SDL_VERSION(&compiled);
+        SDL_GetVersion(&linked);
+
+        std::cout << "We compiled against SDL2 version" << std::to_string(compiled.major) << "." << std::to_string(compiled.minor) << "." << std::to_string(compiled.patch) << std::endl;
 
         std::cout << "Rendered::createRenderer" << std::endl;
     }
@@ -26,6 +52,8 @@ namespace ReactNativeWasm {
 
     void Renderer::renderText(ReactNativeWasm::Components::ShadowNode * textNode) {
         std::lock_guard<std::mutex> guard(renderMutex);
+
+        std::cout << "thread " << std::this_thread::get_id() << " rendering text...\n";
 
         auto view = textNode->getView();
 
@@ -49,7 +77,7 @@ namespace ReactNativeWasm {
             TTF_RenderText_Solid(Sans, text.c_str(), White);
 
         // // now you can convert it into a texture
-        SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+        SDL_Texture* Message = MAIN_SDL_CreateTextureFromSurface(renderer, surfaceMessage);
 
         SDL_FRect Message_rect; //create a rect
         Message_rect.x = 0;  //controls the rect's x coordinate
@@ -74,10 +102,12 @@ namespace ReactNativeWasm {
 
         // // Don't forget to free your surface and texture
         SDL_FreeSurface(surfaceMessage);
-        SDL_DestroyTexture(Message);
+        MAIN_SDL_DestroyTexture(Message);
     }
 
     void Renderer::renderView(ReactNativeWasm::Components::ShadowNode * node) {
+        std::cout << "thread " << std::this_thread::get_id() << " rendering view...\n";
+
         std::lock_guard<std::mutex> guard(renderMutex);
 
         // Set a color for drawing matching the earlier `ctx.fillStyle = "green"`.
@@ -88,11 +118,38 @@ namespace ReactNativeWasm {
         SDL_RenderFillRect(renderer, &rect);
     }
 
-    void Renderer::render(ReactNativeWasm::Components::ShadowNode * node) {
+    void Renderer::__render(ReactNativeWasm::Components::ShadowNode * node) {
         if (node->className == "RCTRawText") {
             renderText(node);
         } else {
             renderView(node);
         }
+    }
+
+    // void renderInMain(ReactNativeWasm::Renderer * renderer, ReactNativeWasm::Components::ShadowNode * node) {
+    //     renderer->render(node);
+    // }
+
+    void Renderer::render(ReactNativeWasm::Components::ShadowNode * node) {
+        // auto that = std::shared_ptr<ReactNativeWasm::Renderer>(this);
+
+        // if (emscripten_is_main_runtime_thread()) {
+        //     __render(node);
+        // } else {
+        //     emscripten_sync_run_in_main_runtime_thread(
+        //         EM_FUNC_SIG_VI,
+        //         ReactNativeWasm::renderInMain,
+        //         *that,
+        //         (uint32_t)node
+        //     );
+        // }
+
+        __render(node);
+
+        // if (node->className == "RCTRawText") {
+        //     renderText(node);
+        // } else {
+        //     renderView(node);
+        // }
     }
 }

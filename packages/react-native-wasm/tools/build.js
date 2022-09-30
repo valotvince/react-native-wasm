@@ -4,16 +4,24 @@ const spawnPromise = require('./spawn-promise');
 const getCompilationManifest = require('./build/compilation-manifest');
 const buildLibrary = require('./build/build-library');
 
-module.exports = async ({ appDir, reactNativeWasmDir, reactNativeDir }) => {
+module.exports = async ({ debug, appDir, reactNativeWasmDir, reactNativeDir }) => {
   const { libraries } = getCompilationManifest(reactNativeWasmDir, reactNativeDir);
 
-  await Promise.all(libraries.map((library) => buildLibrary(reactNativeWasmDir, library)));
+  for (const library of libraries) {
+    await buildLibrary(reactNativeWasmDir, library);
+  }
 
   const warnings = ['all'].map((warning) => `-W${warning}`);
   const options = [
     'USE_SDL=2',
     'USE_SDL_TTF=2',
-    'USE_SDL_IMAGE=2',
+    // 'USE_SDL_IMAGE=2',
+    'MIN_WEBGL_VERSION=2',
+    'MAX_WEBGL_VERSION=2',
+    // Allow usage of SDL outside of main thread
+    'OFFSCREEN_FRAMEBUFFER=1',
+    // 'OFFSCREENCANVAS_SUPPORT=1',
+
     'LLD_REPORT_UNDEFINED=1',
     'PTHREAD_POOL_SIZE=3',
     'USE_PTHREADS=1',
@@ -26,9 +34,10 @@ module.exports = async ({ appDir, reactNativeWasmDir, reactNativeDir }) => {
     // 'ASYNCIFY',
     'ALLOW_MEMORY_GROWTH=1',
     'STACK_OVERFLOW_CHECK=1',
-    // 'MIN_WEBGL_VERSION=2',
-    // 'MAX_WEBGL_VERSION=2',
   ].map((warning) => `-s${warning}`);
+
+  if (debug) {
+  }
 
   await spawnPromise(
     'emcc',

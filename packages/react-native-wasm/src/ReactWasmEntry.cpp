@@ -139,7 +139,10 @@ SharedNativeModuleVector getSharedNativeModules(std::shared_ptr<facebook::react:
 
 struct InstanceCallback : public facebook::react::InstanceCallback {
   ~InstanceCallback() override {}
-  void onBatchComplete() override {}
+  void onBatchComplete() override {
+    // Should render the layout on batch complete
+    std::cout << "onBatchComplete" << std::endl;
+  }
   void incrementPendingJSCalls() override {}
   void decrementPendingJSCalls() override {}
 };

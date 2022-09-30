@@ -46,6 +46,7 @@ const getFolly = (reactNativeWasmDir) => {
       '/usr/local/opt/boost/include',
       '/usr/local/opt/gflags/include',
       '/usr/local/opt/fmt/include',
+      '/usr/local/opt/double-conversion/include',
 
       path.join(reactNativeWasmDir, 'deps'),
     ],
