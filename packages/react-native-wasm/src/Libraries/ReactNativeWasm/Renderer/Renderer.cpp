@@ -6,12 +6,32 @@
 #include <thread>
 
 SDL_Texture *MAIN_SDL_CreateTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
+  if (emscripten_is_main_runtime_thread()) {
+    return SDL_CreateTextureFromSurface(renderer, surface);
+  }
+
   return (SDL_Texture *)emscripten_sync_run_in_main_runtime_thread(
     EM_FUNC_SIG_III, SDL_CreateTextureFromSurface, (uint32_t)renderer, (uint32_t)surface);
 }
 
 void MAIN_SDL_DestroyTexture(SDL_Texture *texture) {
+  if (emscripten_is_main_runtime_thread()) {
+    SDL_DestroyTexture(texture);
+
+    return;
+  }
+
   emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_VI, SDL_DestroyTexture, (uint32_t)texture);
+}
+
+void MAIN_SDL_RenderPresent(SDL_Renderer *renderer) {
+  if (emscripten_is_main_runtime_thread()) {
+    SDL_RenderPresent(renderer);
+
+    return;
+  }
+
+  emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_VI, SDL_RenderPresent, (uint32_t)renderer);
 }
 
 namespace ReactNativeWasm {
@@ -27,7 +47,7 @@ void Renderer::flush() {
   std::lock_guard<std::mutex> guard(renderMutex);
 
   // SDL_RenderClear(renderer);
-  SDL_RenderPresent(renderer);
+  MAIN_SDL_RenderPresent(renderer);
 
   std::cout << "FLUSH" << std::endl;
 }
