@@ -20,8 +20,8 @@ const dependencies = [
   },
   {
     name: 'double-conversion',
-    version: '1.1.6',
-    remote: 'https://github.com/google/double-conversion/archive/refs/tags/v1.1.6.tar.gz',
+    version: '2.0.2',
+    remote: 'https://github.com/google/double-conversion/archive/refs/tags/v2.0.2.tar.gz',
   },
   {
     name: 'glog',
@@ -50,7 +50,7 @@ module.exports = async ({ appDir, reactNativeWasmDir, reactNativeDir }) => {
       try {
         await fs.stat(archivePath);
       } catch {
-        await spawnPromise('wget', [remote, '-O', archivePath]);
+        await spawnPromise('wget', ['-q', remote, '-O', archivePath]);
       }
 
       try {
