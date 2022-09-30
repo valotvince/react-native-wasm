@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const reactNativePath = path.join(__dirname, 'node_modules', 'react-native');
-const reactNativeWasmPath = path.resolve(__dirname, '..', 'react-native-wasm');
+const appDir = process.cwd();
+const reactNativePath = path.join(appDir, 'node_modules', 'react-native');
+const reactNativeWasmPath = __dirname;
 
 const reactNativeWasmSourcePath = path.join(reactNativeWasmPath, 'src');
 const reactNativeWasmReactNativePath = path.join(reactNativeWasmPath, 'node_modules', 'react-native');
@@ -74,7 +75,7 @@ const getModuleName = (context, originalModuleName) => {
 };
 
 module.exports = {
-  projectRoot: __dirname,
+  projectRoot: appDir,
   resolver: {
     resolveRequest: (context, moduleName, platform) => {
       const redirectedModuleName = getModuleName(context, moduleName);
@@ -95,7 +96,7 @@ module.exports = {
   watchFolders: [reactNativeWasmPath],
   serializer: {
     getModulesRunBeforeMainModule: () => {
-      const options = { paths: [process.cwd()] };
+      const options = { paths: [appDir] };
 
       return [require.resolve('react-native/Libraries/Core/InitializeCore', options)];
     },

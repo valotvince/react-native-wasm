@@ -6,20 +6,11 @@ const spawnPromise = require('./spawn-promise');
 const getCompilationManifest = require('./build/compilation-manifest');
 const buildLibrary = require('./build/build-library');
 
+const appDir = process.cwd();
 const reactNativeWasmDir = path.resolve(__dirname, '..');
-const reactNativeDir = path.resolve(path.join(process.cwd(), 'node_modules', 'react-native'));
-
-const dependencies = [
-  {
-    name: 'fmt',
-    version: '6.2.1',
-    remote: 'https://github.com/fmtlib/fmt/releases/download/6.2.1/fmt-6.2.1.zip',
-  },
-];
+const reactNativeDir = path.resolve(path.join(appDir, 'node_modules', 'react-native'));
 
 (async () => {
-  // await overrideRn();
-
   const { libraries } = getCompilationManifest(reactNativeWasmDir, reactNativeDir);
 
   await Promise.all(libraries.map((library) => buildLibrary(reactNativeWasmDir, library)));
@@ -75,10 +66,12 @@ const dependencies = [
 
   await spawnPromise('react-native', [
     'bundle',
+    '--config',
+    path.join(reactNativeWasmDir, 'metro.config.js'),
     '--platform',
     'wasm',
     '--entry-file',
-    './index.tsx',
+    path.join(appDir, 'index.tsx'),
     '--dev',
     'true',
     '--bundle-output',
