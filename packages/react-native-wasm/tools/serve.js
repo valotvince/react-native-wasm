@@ -2,7 +2,7 @@ const Koa = require('koa');
 const koaStatic = require('koa-static');
 const path = require('path');
 
-module.exports = () => {
+module.exports = ({ reactNativeWasmDir }) => {
   const app = new Koa();
 
   app.use(async (ctx, next) => {
@@ -15,7 +15,7 @@ module.exports = () => {
     return next();
   });
 
-  app.use(koaStatic(path.join(__dirname, '..', './dist')));
+  app.use(koaStatic(path.join(reactNativeWasmDir, 'dist')));
 
   app.listen(8081, () => {
     console.log('Serving files through 8081');
