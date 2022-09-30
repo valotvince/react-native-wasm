@@ -10,15 +10,33 @@ const getFilesFromDir = (dir, extension = '.cpp') => {
 
 const getFilesFromRootDir = (rootDir) => (subdir) => getFilesFromDir(path.join(rootDir, subdir), '.cpp');
 
+const getBoost = (reactNativeWasmDir) => {
+  const boostDir = path.join(reactNativeWasmDir, 'deps', 'boost');
+
+  return {
+    name: 'libboost',
+    compilerFlags: ['-pthread'],
+    cmakePath: boostDir,
+  };
+};
+
+const getGlog = (reactNativeWasmDir) => {
+  const glogDir = path.join(reactNativeWasmDir, 'deps', 'glog');
+
+  return {
+    name: 'libglog',
+    compilerFlags: ['-pthread'],
+    cmakePath: glogDir,
+  };
+};
+
 const getFmt = (reactNativeWasmDir) => {
   const fmtDir = path.join(reactNativeWasmDir, 'deps', 'fmt');
 
   return {
-    name: 'lib-fmt',
+    name: 'libfmt',
     compilerFlags: ['-pthread'],
-    definitions: [],
-    includes: [path.join(fmtDir, 'include')],
-    sources: getFilesFromDir(path.join(fmtDir, 'src'), '.cc'),
+    cmakePath: fmtDir,
   };
 };
 
@@ -26,11 +44,10 @@ const getDoubleConversion = (reactNativeWasmDir) => {
   const doubleConversionDir = path.join(reactNativeWasmDir, 'deps', 'double-conversion', 'src');
 
   return {
-    name: 'lib-doubleconversion',
+    name: 'libdouble-conversion',
     compilerFlags: ['-pthread'],
-    definitions: ['__x86_64__'],
-    includes: ['/usr/local/opt/glog/include', path.join(reactNativeWasmDir, 'deps', 'double-conversion', 'include')],
-    sources: getFilesFromDir(doubleConversionDir, '.cc'),
+    // definitions: ['__x86_64__'],
+    cmakePath: doubleConversionDir,
   };
 };
 
@@ -38,42 +55,37 @@ const getFolly = (reactNativeWasmDir) => {
   const follyDir = path.join(reactNativeWasmDir, 'deps', 'folly');
 
   return {
-    name: 'lib-folly',
+    name: 'libfolly',
     compilerFlags: ['-pthread'],
     definitions: ['FOLLY_NO_CONFIG', 'FOLLY_HAVE_PTHREAD=1', 'FOLLY_HAVE_PTHREAD_ATFORK=1'],
-    includes: [
-      '/usr/local/opt/glog/include',
-      '/usr/local/opt/gflags/include',
-      path.join(reactNativeWasmDir, 'deps', 'boost'),
-      follyDir,
-    ],
+    includes: ['/usr/local/opt/glog/include', path.join(reactNativeWasmDir, 'deps')],
     sources: [
-      'folly/SharedMutex.cpp',
-      'folly/concurrency/CacheLocality.cpp',
-      'folly/detail/Futex.cpp',
-      'folly/lang/SafeAssert.cpp',
-      'folly/lang/ToAscii.cpp',
-      'folly/lang/Assume.cpp',
-      'folly/synchronization/ParkingLot.cpp',
-      'folly/system/ThreadId.cpp',
-      'folly/system/ThreadName.cpp',
-      'folly/json.cpp',
-      'folly/Unicode.cpp',
-      'folly/Conv.cpp',
-      'folly/Demangle.cpp',
-      'folly/memory/detail/MallocImpl.cpp',
-      'folly/String.cpp',
-      'folly/dynamic.cpp',
-      'folly/FileUtil.cpp',
-      'folly/Format.cpp',
-      'folly/net/NetOps.cpp',
-      'folly/json_pointer.cpp',
-      'folly/lang/CString.cpp',
-      'folly/detail/UniqueInstance.cpp',
-      'folly/hash/SpookyHashV2.cpp',
-      'folly/container/detail/F14Table.cpp',
-      'folly/ScopeGuard.cpp',
-      'folly/portability/SysUio.cpp',
+      'SharedMutex.cpp',
+      'concurrency/CacheLocality.cpp',
+      'detail/Futex.cpp',
+      'lang/SafeAssert.cpp',
+      'lang/ToAscii.cpp',
+      'lang/Assume.cpp',
+      'synchronization/ParkingLot.cpp',
+      'system/ThreadId.cpp',
+      'system/ThreadName.cpp',
+      'json.cpp',
+      'Unicode.cpp',
+      'Conv.cpp',
+      'Demangle.cpp',
+      'memory/detail/MallocImpl.cpp',
+      'String.cpp',
+      'dynamic.cpp',
+      'FileUtil.cpp',
+      'Format.cpp',
+      'net/NetOps.cpp',
+      'json_pointer.cpp',
+      'lang/CString.cpp',
+      'detail/UniqueInstance.cpp',
+      'hash/SpookyHashV2.cpp',
+      'container/detail/F14Table.cpp',
+      'ScopeGuard.cpp',
+      'portability/SysUio.cpp',
     ].map((file) => path.join(follyDir, file)),
   };
 };
@@ -85,7 +97,7 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
   const getFilesFromReactCommonDir = getFilesFromRootDir(reactNativeReactCommonDir);
 
   return {
-    name: 'lib-reactnative',
+    name: 'libreact-native',
     definitions: ['__unused=[[maybe_unused]]'],
     compilerFlags: ['-pthread'],
     includes: [
@@ -170,9 +182,9 @@ const getReactNativeWasm = (reactNativeWasmDir) => {
   };
 };
 
-const mergeValues = (library, key, values) => ({
+const mergeValues = (library, key, values = []) => ({
   ...library,
-  [key]: Array.from(new Set([...values, ...library[key]])),
+  [key]: Array.from(new Set([...values, ...(library[key] || [])])),
 });
 
 const prependValues = (libraries, key, values) => libraries.map((library) => mergeValues(library, key, values));
@@ -197,11 +209,13 @@ module.exports = (reactNativeWasmDir, reactNativeDir) => {
     prependValues(
       imbricatedValues(
         [
+          getBoost(reactNativeWasmDir),
+          getGlog(reactNativeWasmDir),
           getDoubleConversion(reactNativeWasmDir),
           getFmt(reactNativeWasmDir),
           getFolly(reactNativeWasmDir),
-          getReactNative(reactNativeWasmDir, reactNativeDir),
-          getReactNativeWasm(reactNativeWasmDir),
+          // getReactNative(reactNativeWasmDir, reactNativeDir),
+          // getReactNativeWasm(reactNativeWasmDir),
         ],
         'includes',
       ),

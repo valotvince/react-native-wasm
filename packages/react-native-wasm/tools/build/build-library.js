@@ -45,6 +45,18 @@ module.exports = async (cwd, library) => {
 
   await fs.mkdir(path.join(outputDirectory), { recursive: true });
 
+  if (library.cmakePath) {
+    await spawnPromise('emcmake', ['cmake', '-S', library.cmakePath], {
+      cwd: outputDirectory,
+    });
+
+    await spawnPromise('cmake', ['--build', '.'], {
+      cwd: outputDirectory,
+    });
+
+    return;
+  }
+
   const manifest = await buildManifest(library);
   const existingManifest = await getManifest(outputDirectory);
 
