@@ -230,8 +230,8 @@ int main(int argc, char *argv[]) {
 }
 
 void onBundleLoaded() {
-  folly::dynamic params = folly::dynamic::array(
-    std::move("main"), folly::dynamic::object("initialProps", {})("rootTag", 11)("fabric", false));
+  folly::dynamic params =
+    folly::dynamic::array(std::move("main"), folly::dynamic::object("initialProps", {})("rootTag", 11)("fabric", true));
 
   reactInstance->callJSFunction("AppRegistry", "runApplication", std::move(params));
 }

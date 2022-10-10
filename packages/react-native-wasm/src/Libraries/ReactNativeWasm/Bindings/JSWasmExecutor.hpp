@@ -60,7 +60,7 @@ public:
 
   void setGlobalVariable(std::string propName, std::unique_ptr<const facebook::react::JSBigString> jsonValue) override;
 
-  void *getJavaScriptContext() override { return nullptr; }
+  void *getJavaScriptContext() override;
 
   /**
    * Returns whether or not the underlying executor supports debugging via the

@@ -62,6 +62,22 @@ mergeInto(LibraryManager.library, {
       console.error(error);
     }
   },
+  setGlobalVariableFunction__proxy: 'sync',
+  setGlobalVariableFunction: function (name) {
+    const decodedName = UTF8ToString(name);
+
+    console.log('setGlobalVariableFunction', decodedName);
+
+    window[decodedName] = (...args) => Module.runtimeInvokeFunction(decodedName, JSON.stringify(args));
+
+    console.log('setGlobalVariableFunction', window[decodedName])
+  },
+  setGlobalVariableObject__proxy: 'sync',
+  setGlobalVariableObject: function (name, objectPointer) {
+    console.log('Debug: setGlobalVariableObject', UTF8ToString(name), objectPointer);
+
+    // window[UTF8ToString(name)] = {};
+  },
   setGlobalVariable__proxy: 'sync',
   setGlobalVariable: function (name, value) {
     const decodedName = UTF8ToString(name);
@@ -72,102 +88,5 @@ mergeInto(LibraryManager.library, {
     } catch {
       window[decodedName] = decodedValue
     }
-
-    if (!window.nativeCallSyncHook) {
-      window.nativeCallSyncHook = (moduleID, methodID, params) => {
-        console.log('nativeCallSyncHook', moduleID, '::', methodID, params);
-
-        const result = Module.nativeCallSyncHook(moduleID, methodID, JSON.stringify(params));
-
-        console.log('nativeCallSyncHook result ', JSON.parse(result));
-
-        if (result) {
-          return JSON.parse(result);
-        }
-
-        return result;
-      }
-    }
-
-    if (window.__turboModuleProxy) {
-      return;
-    }
-
-    const registerMethods = (nativeModuleName, nativeModule, asyncMethods = [],  syncMethods = []) => {
-      syncMethods.forEach((name) => {
-        nativeModule[name] = (...args) => {
-          const result = nativeModule.callSerializableNativeHook(name, JSON.stringify(args));
-
-          if(result) {
-            console.log('NativeModuleProxy', nativeModuleName, '::', name, '=>', result);
-
-            return JSON.parse(result);
-          }
-        }
-      });
-
-      asyncMethods.forEach((name) => {
-          nativeModule[name] = (...args) => {
-            nativeModule.invoke(name, JSON.stringify(args));
-          }
-      });
-    }
-
-    const createNativeModuleProxy = (name, nativeModule) => {
-      if (!nativeModule) {
-        return null;
-      }
-
-      return new Proxy(nativeModule, {
-        get: function (target, field) {
-          if (field === 'getConstants') {
-            return () => JSON.parse(target.getConstants());
-          }
-
-          if (field in target) {
-            return target[field];
-          }
-
-          return (...args) => {
-            target.invoke(field, JSON.stringify(args));
-          };
-        },
-      });
-    };
-
-    window.__turboModuleProxy = (name) => {
-      const result = Module.__turboModuleProxy(name);
-
-      if (result) {
-        if (name === 'UIManager') {
-          registerMethods(
-            name,
-            result,
-            ['setChildren', 'createView', 'manageChildren', 'lazilyLoadView', 'updateView', 'focus', 'blur', 'findSubviewIn', 'dispatchViewManagerCommand', 'measure', 'measureInWindow', 'viewIsDescendantOf', 'measureLayout'],
-            ['getConstantsForViewManager']
-          );
-        }
-
-        return createNativeModuleProxy(name, result);
-      }
-
-      if (!result) {
-        console.log('Warn:', name, 'Implementation needs to be removed');
-
-        return {
-          getConstants: () => ({
-            scriptURL: 'react-native.bundle.js',
-            Dimensions: {
-              window: {},
-              screen: {},
-            },
-          }),
-          show: () => {},
-          hide: () => {},
-        };
-      }
-
-      return null;
-    };
   },
 });

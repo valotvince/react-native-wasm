@@ -16,7 +16,7 @@
 #include "Libraries/Utilities/Timing/Timing.hpp"
 
 namespace ReactNativeWasm {
-Instance::~Instance() { std::cout << "Instance DELETED" << std::endl; }
+Instance::~Instance() {}
 
 void Instance::loadBundle() { ReactNativeWasm::JavascriptAccessor::insertScriptTag("react-native.bundle.js"); };
 
