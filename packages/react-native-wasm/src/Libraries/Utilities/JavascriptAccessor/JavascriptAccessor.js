@@ -68,9 +68,11 @@ mergeInto(LibraryManager.library, {
 
     console.log('setGlobalVariableFunction', decodedName);
 
-    window[decodedName] = (...args) => Module.runtimeInvokeFunction(decodedName, JSON.stringify(args));
+    console.log(Module.WasmRuntime)
 
-    console.log('setGlobalVariableFunction', window[decodedName])
+    window[decodedName] = (...args) => window.WasmRuntime.invoke(decodedName, args);
+
+    // console.log('setGlobalVariableFunction', window[decodedName])
   },
   setGlobalVariableObject__proxy: 'sync',
   setGlobalVariableObject: function (name, objectPointer) {
