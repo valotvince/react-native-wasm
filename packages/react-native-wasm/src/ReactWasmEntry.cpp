@@ -7,6 +7,8 @@
 #include <mutex>
 #include <thread>
 
+#include <ReactCommon/TurboCxxModule.h>
+#include <ReactCommon/TurboModuleBinding.h>
 #include <cxxreact/CxxNativeModule.h>
 #include <cxxreact/Instance.h>
 #include <cxxreact/ModuleRegistry.h>
@@ -41,6 +43,7 @@
 using SharedNativeModuleVector = std::vector<std::shared_ptr<facebook::react::NativeModule>>;
 using UniqueNativeModuleVector = std::vector<std::unique_ptr<facebook::react::NativeModule>>;
 using SharedReactNativeWasmComponentManagers = std::vector<std::shared_ptr<ReactNativeWasm::Components::Manager>>;
+using TurboModuleCache = std::unordered_map<std::string, std::shared_ptr<facebook::react::TurboModule>>;
 
 std::shared_ptr<facebook::react::Instance> reactInstance;
 std::shared_ptr<ReactNativeWasm::Instance> instance;
@@ -52,6 +55,11 @@ std::shared_ptr<ReactNativeWasm::SchedulerDelegate> schedulerDelegate;
 std::shared_ptr<SharedReactNativeWasmComponentManagers> componentManagers;
 
 std::shared_ptr<ReactNativeWasm::Renderer> renderer;
+
+std::shared_ptr<facebook::react::LongLivedObjectCollection> longLivedObjectCollection_;
+std::shared_ptr<TurboModuleCache> turboModuleCache;
+
+std::shared_ptr<UniqueNativeModuleVector> nativeModules;
 
 UniqueNativeModuleVector getNativeModules(
   std::shared_ptr<facebook::react::Instance> instance, std::shared_ptr<ReactNativeWasm::NativeQueue> nativeQueue) {
@@ -73,32 +81,6 @@ UniqueNativeModuleVector getNativeModules(
     nativeQueue));
 
   modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
-    instance, ReactNativeWasm::Timing::Name, []() { return std::make_unique<ReactNativeWasm::Timing>(); },
-    nativeQueue));
-
-  return modules;
-}
-
-SharedNativeModuleVector getSharedNativeModules(
-  std::shared_ptr<facebook::react::Instance> instance, std::shared_ptr<ReactNativeWasm::NativeQueue> nativeQueue) {
-  SharedNativeModuleVector modules;
-
-  modules.push_back(std::make_shared<facebook::react::CxxNativeModule>(
-    instance, facebook::react::PlatformConstantsModule::Name,
-    []() { return std::make_unique<facebook::react::PlatformConstantsModule>(); }, nativeQueue));
-
-  modules.push_back(std::make_shared<facebook::react::CxxNativeModule>(
-    instance, "DevSettings", []() { return std::make_unique<ReactNativeWasm::DevSettings>(); }, nativeQueue));
-
-  modules.push_back(std::make_shared<facebook::react::CxxNativeModule>(
-    instance, "UIManager",
-    []() {
-      return std::make_unique<ReactNativeWasm::UIManagerModule>(
-        reactScheduler->getUIManager(), componentManagers, renderer);
-    },
-    nativeQueue));
-
-  modules.push_back(std::make_shared<facebook::react::CxxNativeModule>(
     instance, ReactNativeWasm::Timing::Name, []() { return std::make_unique<ReactNativeWasm::Timing>(); },
     nativeQueue));
 
@@ -137,8 +119,6 @@ void run() {
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::RawTextManager>(renderer));
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::VirtualTextManager>(renderer));
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>(renderer));
-
-  std::cout << "toto" << std::endl;
 
   reactInstance = std::make_shared<facebook::react::Instance>();
 
@@ -205,15 +185,64 @@ void run() {
     throw e;
   }
 
+  nativeModules = std::make_shared<UniqueNativeModuleVector>(getNativeModules(reactInstance, nativeQueue));
+
   auto moduleRegistry =
     std::make_shared<facebook::react::ModuleRegistry>(std::move(getNativeModules(reactInstance, nativeQueue)));
-  auto sharedModules = std::make_shared<SharedNativeModuleVector>(getSharedNativeModules(reactInstance, nativeQueue));
 
   reactInstance->initializeBridge(
     std::make_unique<InstanceCallback>(), std::make_shared<ReactNativeWasm::JSWasmExecutorFactory>(), nativeQueue,
     moduleRegistry);
 
-  instance->setupRuntime(moduleRegistry, std::move(sharedModules));
+  // instance->setupRuntime(moduleRegistry, sharedModules);
+
+  turboModuleCache = std::make_shared<TurboModuleCache>();
+  longLivedObjectCollection_ = std::make_shared<facebook::react::LongLivedObjectCollection>();
+
+  auto jsInvoker = reactInstance->getJSCallInvoker();
+
+  auto turboModuleInvoker = [turboModuleCache = std::weak_ptr<TurboModuleCache>(turboModuleCache),
+                             jsInvoker = std::weak_ptr<facebook::react::CallInvoker>(jsInvoker),
+                             nativeModules = std::weak_ptr<UniqueNativeModuleVector>(nativeModules)](
+                              const std::string &name) -> std::shared_ptr<facebook::react::TurboModule> {
+    auto turboModuleCacheLocked = turboModuleCache.lock();
+    auto jsInvokerLocked = jsInvoker.lock();
+    auto nativeModulesLocked = nativeModules.lock();
+
+    std::cout << "Searching for TurboModule " << name << std::endl;
+
+    if (!turboModuleCacheLocked || !jsInvokerLocked) {
+      return nullptr;
+    }
+
+    auto turboModuleLookup = turboModuleCacheLocked->find(name);
+    if (turboModuleLookup != turboModuleCacheLocked->end()) {
+      return turboModuleLookup->second;
+    }
+
+    std::cout << "lock acquired" << std::endl;
+
+    // for (auto it = nativeModulesLocked->begin(); it != nativeModulesLocked->end(); ++it) {
+    //   if (it->get()->getName() == name) {
+    //     auto turboModule = std::make_shared<facebook::react::TurboCxxModule>(
+    //       nativeModulesLocked->at(std::distance(nativeModulesLocked->begin(), it)), jsInvokerLocked);
+
+    //     turboModuleCacheLocked->insert({it->get()->getName(), turboModule});
+
+    //     return turboModule;
+    //   }
+    // }
+
+    return nullptr;
+  };
+
+  auto javascriptContext = reactInstance->getJavaScriptContext();
+  auto runtime = static_cast<facebook::jsi::Runtime *>(javascriptContext);
+
+  facebook::react::TurboModuleBinding::install(
+    *runtime, std::move(turboModuleInvoker),
+    facebook::react::TurboModuleBindingMode::HostObject, longLivedObjectCollection_);
+
   instance->loadBundle();
 
   std::cout << "After loadBundle" << std::endl;
