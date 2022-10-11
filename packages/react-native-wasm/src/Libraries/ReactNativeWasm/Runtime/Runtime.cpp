@@ -236,18 +236,18 @@ Value Runtime::call(const Function &function, const Value &jsThis, const Value *
   // Uglier could not be possible, but i'll refactor it once I understand cpp pack/unpack
   // TODO: Use argument unpack
   switch (count) {
-    case 1:
-      returnValue = decodedFunction->data(jsArgs[0]);
-      break;
-    case 2:
-      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1]);
-      break;
-    case 3:
-      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2]);
-      break;
-    case 4:
-      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2], jsArgs[3]);
-      break;
+  case 1:
+    returnValue = decodedFunction->data(jsArgs[0]);
+    break;
+  case 2:
+    returnValue = decodedFunction->data(jsArgs[0], jsArgs[1]);
+    break;
+  case 3:
+    returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2]);
+    break;
+  case 4:
+    returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2], jsArgs[3]);
+    break;
   }
 
   return Value(make<Object>(new WasmObjectValue(this, std::move(returnValue))));
@@ -494,7 +494,7 @@ void Runtime::setPropertyValue(
 // throw std::logic_error("Not implemented");
 // };
 
-void Runtime::invoke(std::string methodName, emscripten::val jsonArgs) {
+emscripten::val Runtime::invoke(std::string methodName, emscripten::val jsonArgs) {
   auto pair = runtimeMethods.find(methodName);
 
   auto size = jsonArgs["length"].as<size_t>();
@@ -525,14 +525,16 @@ void Runtime::invoke(std::string methodName, emscripten::val jsonArgs) {
         std::cerr << "Func is not defined" << std::endl;
         throw std::logic_error("Func is not defined");
       }
-      object->func(*this, std::move(thisVal), args, size);
+      auto result = object->func(*this, std::move(thisVal), args, size);
+
+      auto object = static_cast<const WasmObjectValue *>(getPointerValue(result));
+
+      return object->data;
     } catch (std::exception error) {
       std::cerr << error.what() << std::endl;
 
       throw error;
     }
-
-    return;
   }
 
   throw std::invalid_argument("No " + methodName + " method registered");

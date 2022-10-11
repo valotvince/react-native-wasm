@@ -40,7 +40,7 @@
 #include "Libraries/ReactNativeWasm/UIManager/UIManagerModule.hpp"
 #include "ReactWasmInstance.hpp"
 
-using SharedNativeModuleVector = std::vector<std::shared_ptr<facebook::react::NativeModule>>;
+using UniqueCxxNativeModuleMap = std::unordered_map<std::string, facebook::xplat::module::CxxModule::Provider>;
 using UniqueNativeModuleVector = std::vector<std::unique_ptr<facebook::react::NativeModule>>;
 using SharedReactNativeWasmComponentManagers = std::vector<std::shared_ptr<ReactNativeWasm::Components::Manager>>;
 using TurboModuleCache = std::unordered_map<std::string, std::shared_ptr<facebook::react::TurboModule>>;
@@ -59,7 +59,21 @@ std::shared_ptr<ReactNativeWasm::Renderer> renderer;
 std::shared_ptr<facebook::react::LongLivedObjectCollection> longLivedObjectCollection_;
 std::shared_ptr<TurboModuleCache> turboModuleCache;
 
-std::shared_ptr<UniqueNativeModuleVector> nativeModules;
+std::shared_ptr<UniqueCxxNativeModuleMap> nativeModules;
+
+UniqueCxxNativeModuleMap getCxxNativeModules() {
+  UniqueCxxNativeModuleMap modules;
+
+  modules.insert({"PlatformConstants", []() { return std::make_unique<facebook::react::PlatformConstantsModule>(); }});
+  modules.insert({"DevSettings", []() { return std::make_unique<ReactNativeWasm::DevSettings>(); }});
+  modules.insert({"UIManager", []() {
+    return std::make_unique<ReactNativeWasm::UIManagerModule>(
+      reactScheduler->getUIManager(), componentManagers, renderer);
+  }});
+  modules.insert({"Timing", []() { return std::make_unique<ReactNativeWasm::Timing>(); }});
+
+  return modules;
+}
 
 UniqueNativeModuleVector getNativeModules(
   std::shared_ptr<facebook::react::Instance> instance, std::shared_ptr<ReactNativeWasm::NativeQueue> nativeQueue) {
@@ -185,7 +199,7 @@ void run() {
     throw e;
   }
 
-  nativeModules = std::make_shared<UniqueNativeModuleVector>(getNativeModules(reactInstance, nativeQueue));
+  nativeModules = std::make_shared<UniqueCxxNativeModuleMap>(getCxxNativeModules());
 
   auto moduleRegistry =
     std::make_shared<facebook::react::ModuleRegistry>(std::move(getNativeModules(reactInstance, nativeQueue)));
@@ -203,7 +217,7 @@ void run() {
 
   auto turboModuleInvoker = [turboModuleCache = std::weak_ptr<TurboModuleCache>(turboModuleCache),
                              jsInvoker = std::weak_ptr<facebook::react::CallInvoker>(jsInvoker),
-                             nativeModules = std::weak_ptr<UniqueNativeModuleVector>(nativeModules)](
+                             nativeModules = std::weak_ptr<UniqueCxxNativeModuleMap>(nativeModules)](
                               const std::string &name) -> std::shared_ptr<facebook::react::TurboModule> {
     auto turboModuleCacheLocked = turboModuleCache.lock();
     auto jsInvokerLocked = jsInvoker.lock();
@@ -215,23 +229,27 @@ void run() {
       return nullptr;
     }
 
+    std::cout << "lock acquired" << std::endl;
+
     auto turboModuleLookup = turboModuleCacheLocked->find(name);
     if (turboModuleLookup != turboModuleCacheLocked->end()) {
+    std::cout << "Found Module cached !" << std::endl;
+
       return turboModuleLookup->second;
     }
 
-    std::cout << "lock acquired" << std::endl;
 
-    // for (auto it = nativeModulesLocked->begin(); it != nativeModulesLocked->end(); ++it) {
-    //   if (it->get()->getName() == name) {
-    //     auto turboModule = std::make_shared<facebook::react::TurboCxxModule>(
-    //       nativeModulesLocked->at(std::distance(nativeModulesLocked->begin(), it)), jsInvokerLocked);
+    auto nativeModuleLookup = nativeModulesLocked->find(name);
 
-    //     turboModuleCacheLocked->insert({it->get()->getName(), turboModule});
+    if (nativeModuleLookup != nativeModulesLocked->end()) {
+        std::cout << "Found Module !" << std::endl;
 
-    //     return turboModule;
-    //   }
-    // }
+        auto turboModule = std::make_shared<facebook::react::TurboCxxModule>(nativeModuleLookup->second(), jsInvokerLocked);
+
+        turboModuleCacheLocked->insert({nativeModuleLookup->first, turboModule});
+
+        return turboModule;
+    }
 
     return nullptr;
   };
@@ -240,8 +258,8 @@ void run() {
   auto runtime = static_cast<facebook::jsi::Runtime *>(javascriptContext);
 
   facebook::react::TurboModuleBinding::install(
-    *runtime, std::move(turboModuleInvoker),
-    facebook::react::TurboModuleBindingMode::HostObject, longLivedObjectCollection_);
+    *runtime, std::move(turboModuleInvoker), facebook::react::TurboModuleBindingMode::HostObject,
+    longLivedObjectCollection_);
 
   instance->loadBundle();
 
@@ -262,7 +280,7 @@ void onBundleLoaded() {
   folly::dynamic params =
     folly::dynamic::array(std::move("main"), folly::dynamic::object("initialProps", {})("rootTag", 11)("fabric", true));
 
-  reactInstance->callJSFunction("AppRegistry", "runApplication", std::move(params));
+  // reactInstance->callJSFunction("AppRegistry", "runApplication", std::move(params));
 }
 
 EMSCRIPTEN_BINDINGS(ReactWasmEntry) { emscripten::function("__onBundleLoaded", &onBundleLoaded); }

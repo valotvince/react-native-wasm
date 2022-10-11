@@ -84,7 +84,7 @@ public:
   void setPropertyValue(
     facebook::jsi::Object &, const facebook::jsi::String &name, const facebook::jsi::Value &value) override;
 
-  void invoke(std::string methodName, emscripten::val jsonArgs);
+  emscripten::val invoke(std::string methodName, emscripten::val jsonArgs);
 
 protected:
   class WasmObjectValue final : public PointerValue {
