@@ -9,22 +9,25 @@
 
 extern "C" {
 namespace ReactNativeWasm::JavascriptAccessor {
-extern void setGlobalVariableFunction(const char *name);
+extern void setGlobalVariableFunction(const char *);
 extern void setGlobalVariableObject(const char *, facebook::jsi::HostObject &);
 } // namespace ReactNativeWasm::JavascriptAccessor
 }
 
 namespace ReactNativeWasm {
 
-auto runtimeMethods = std::map<std::string, WasmFunctionCallback *>();
+auto runtimeMethods = std::map<std::string, const void *>();
 
 void Runtime::WasmObjectValue::invalidate() {}
 
-Runtime::Runtime() noexcept {};
+Runtime::Runtime() noexcept {
+  emscripten::val::global("window").set("WasmRuntime", this);
+  // runtimeMethods = std::make_unique<std::map<std::string, const WasmObjectValue *>>();
+};
 
 facebook::jsi::Value
 Runtime::evaluateJavaScript(const std::shared_ptr<const facebook::jsi::Buffer> &buffer, const std::string &sourceURL) {
-  std::cout << "Runtime::evaluateJavaScript" << std::endl;
+  std::cout << "Runtime::evaluateJavaScript temp4" << std::endl;
   return 0;
 };
 
@@ -77,7 +80,11 @@ Runtime::PointerValue *Runtime::cloneObject(const Runtime::PointerValue *pv) {
     return nullptr;
   }
 
-  auto *object = static_cast<const WasmObjectValue *>(pv);
+  auto object = static_cast<const WasmObjectValue *>(pv);
+
+  if (object->isFunction) {
+    return new WasmObjectValue(this, object->func);
+  }
 
   return new WasmObjectValue(this, object->data);
 };
@@ -170,7 +177,7 @@ HostFunctionType &Runtime::getHostFunction(const Function &) {
 PropNameID Runtime::createPropNameIDFromAscii(const char *str, size_t length) {
   std::cout << "Runtime::createPropNameIDFromAscii" << std::endl;
 
-  auto val = emscripten::val::u8string(str);
+  auto val = emscripten::val(str);
 
   return make<PropNameID>(new WasmObjectValue(this, std::move(val)));
 };
@@ -178,6 +185,8 @@ PropNameID Runtime::createPropNameIDFromUtf8(const uint8_t *utf8, size_t length)
   std::cout << "Runtime::createPropNameIDFromUtf8" << std::endl;
 
   auto val = emscripten::val::u8string(reinterpret_cast<const char *>(utf8));
+
+  std::cout << "Runtime::createPropNameIDFromUtf8: " << val.as<std::string>() << std::endl;
 
   return make<PropNameID>(new WasmObjectValue(this, std::move(val)));
 };
@@ -195,18 +204,50 @@ Function
 Runtime::createFunctionFromHostFunction(const PropNameID &name, unsigned int paramCount, HostFunctionType func) {
   std::cout << "Runtime::createFunctionFromHostFunction" << std::endl;
 
-  auto val = emscripten::val::object();
-  val.set("name", utf8(name));
-  val.set("paramCount", paramCount);
-  val.set("funcAddr", reinterpret_cast<uintptr_t>(&func));
+  auto object = make<Object>(new WasmObjectValue(this, func));
 
-  auto object = make<Object>(new WasmObjectValue(this, std::move(val)));
+  if (!func) {
+    std::cerr << "Runtime::createFunctionFromHostFunction func not defined" << std::endl;
+  }
 
   return object.getFunction(*this);
 };
-Value Runtime::call(const Function &, const Value &jsThis, const Value *args, size_t count) {
+Value Runtime::call(const Function &function, const Value &jsThis, const Value *args, size_t count) {
   std::cout << "Runtime::call" << std::endl;
-  throw std::logic_error("Not implemented");
+
+  auto decodedFunction = static_cast<const WasmObjectValue *>(getPointerValue(function));
+  auto decodedArgs = static_cast<const WasmObjectValue *>(getPointerValue(*args));
+
+  std::cout << decodedArgs->data.typeOf().as<std::string>() << std::endl;
+
+  std::vector<emscripten::val> jsArgs;
+
+  for (auto i = 0; i < count; i++) {
+    auto value = static_cast<const WasmObjectValue *>(getPointerValue(args[i]));
+
+    jsArgs.push_back(value->data);
+  }
+
+  emscripten::val returnValue;
+
+  // Uglier could not be possible, but i'll refactor it once I understand cpp pack/unpack
+  // TODO: Use argument unpack
+  switch (count) {
+    case 1:
+      returnValue = decodedFunction->data(jsArgs[0]);
+      break;
+    case 2:
+      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1]);
+      break;
+    case 3:
+      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2]);
+      break;
+    case 4:
+      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2], jsArgs[3]);
+      break;
+  }
+
+  return Value(make<Object>(new WasmObjectValue(this, std::move(returnValue))));
 };
 Value Runtime::getProperty(const Object &object, const PropNameID &name) {
   auto decodedName = utf8(name);
@@ -274,7 +315,11 @@ bool Runtime::isFunction(const Object &object) const {
 
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  return decodedObject->data.hasOwnProperty("funcAddr");
+  if (decodedObject->isFunction) {
+    return true;
+  }
+
+  return decodedObject->data.typeOf().as<std::string>() == "function";
 };
 bool Runtime::isHostObject(const Object &) const {
   std::cout << "Runtime::isHostObject" << std::endl;
@@ -327,12 +372,12 @@ Value Runtime::getValueAtIndex(const Array &object, size_t i) {
   throw std::logic_error("Not implemented");
 };
 void Runtime::setValueAtIndexImpl(Array &object, size_t i, const Value &value) {
-  std::cout << "Runtime::setValueAtIndexImpl" << std::endl;
-
-  auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
+  auto decodedObject = static_cast<WasmObjectValue *>(getPointerValue(object));
   auto decodedValue = static_cast<const WasmObjectValue *>(getPointerValue(value));
 
-  // decodedObject->data.set(i, decodedValue->data);
+  std::cout << "Runtime::setValueAtIndexImpl i:" << i << std::endl;
+
+  decodedObject->data.set(i, decodedValue->data);
 };
 bool Runtime::strictEquals(const Symbol &a, const Symbol &b) const {
   std::cout << "Runtime::strictEquals 1" << std::endl;
@@ -348,7 +393,6 @@ bool Runtime::strictEquals(const String &a, const String &b) const {
 };
 bool Runtime::strictEquals(const Object &a, const Object &b) const {
   std::cout << "Runtime::strictEquals 4" << std::endl;
-  throw std::logic_error("Not implemented");
 };
 bool Runtime::instanceOf(const Object &o, const Function &f) {
   std::cout << "Runtime::instanceOf" << std::endl;
@@ -356,108 +400,130 @@ bool Runtime::instanceOf(const Object &o, const Function &f) {
 };
 
 void Runtime::setPropertyValue(
-  facebook::jsi::Object &, const facebook::jsi::PropNameID &name, const facebook::jsi::Value &value) {
-  std::cout << "Runtime::setPropertyValue 1" << std::endl;
-  throw std::logic_error("Not implemented");
+  WasmObjectValue *decodedObject, const WasmObjectValue *decodedName, const facebook::jsi::Value &value) {
+  auto humanDecodedName = decodedName->data.as<std::string>();
+
+  std::cout << "Runtime::setPropertyValue " << humanDecodedName << value.isNull() << std::endl;
+
+  if (value.isNull()) {
+    decodedObject->data.set(decodedName->data, emscripten::val::null());
+  } else if (value.isNumber()) {
+    decodedObject->data.set(decodedName->data, value.getNumber());
+  } else if (value.isBool()) {
+    decodedObject->data.set(decodedName->data, value.getBool());
+  } else if (value.isUndefined()) {
+    decodedObject->data.set(decodedName->data, emscripten::val::undefined());
+    // } else if (value.isBigInt()) {
+    // decodedObject->data.set(decodedName->data, value.getBigInt());
+  } else {
+    auto wasmValue = static_cast<const WasmObjectValue *>(getPointerValue(value));
+
+    if (wasmValue->isFunction) {
+      if (!wasmValue->func) {
+        std::cerr << "Function is not defined when stored into stack 2" << std::endl;
+      }
+
+      runtimeMethods.insert({humanDecodedName, wasmValue});
+      ReactNativeWasm::JavascriptAccessor::setGlobalVariableFunction(humanDecodedName.c_str());
+    } else {
+      decodedObject->data.set(decodedName->data, wasmValue->data);
+    }
+  }
+}
+
+void Runtime::setPropertyValue(
+  facebook::jsi::Object &object, const facebook::jsi::PropNameID &name, const facebook::jsi::Value &value) {
+  auto decodedObject = static_cast<WasmObjectValue *>(getPointerValue(object));
+  auto decodedName = static_cast<const WasmObjectValue *>(getPointerValue(name));
+
+  setPropertyValue(decodedObject, decodedName, value);
 };
 void Runtime::setPropertyValue(
   facebook::jsi::Object &object, const facebook::jsi::String &name, const facebook::jsi::Value &value) {
   auto decodedObject = static_cast<WasmObjectValue *>(getPointerValue(object));
   auto decodedName = static_cast<const WasmObjectValue *>(getPointerValue(name));
 
-  std::cout << "Runtime::setPropertyValue" << std::endl;
-
-  auto humanDecodedName = decodedName->data.as<std::string>();
-
-  auto wasmValue = static_cast<const WasmObjectValue *>(getPointerValue(value));
-
-  decodedObject->data.set(decodedName->data, wasmValue->data);
-
-  // if (value.isString()) {
-  //   // ReactNativeWasm::JavascriptAccessor::setGlobalVariable(decodedName, wasmValue->str);
-  // } else if (value.isObject()) {
-  //   auto decodedValueObject = static_cast<const WasmObjectValue *>(getPointerValue(value));
-
-  //   if (isFunction(*decodedValueObject)) {
-  //     std::cout << "Runtime::setPropertyValue function global:" << decodedObject->global << " name:" <<
-  //     humanDecodedName
-  //               << std::endl;
-
-  //     auto wasmCallback = static_cast<WasmFunctionCallback *>(decodedValueObject->data);
-
-  //     ReactNativeWasm::runtimeMethods.insert(std::make_pair(humanDecodedName, wasmCallback));
-
-  //     // auto runner = [this, object, decodedValueObject](const Value* args, size_t count) {
-  //     //   auto function = static_cast<HostFunctionType *>(decodedValueObject->data);
-  //     //   auto functionValue = *function;
-
-  //     //   functionValue(*this, object, args, count);
-  //     // };
-
-  //     // auto runner = []() { std::cout << "Running C++s function from Javascript" << std::endl; };
-
-  //     // emscripten::val method = emscripten::val::module_property("getDynCaller")(std::string("v"), int(runner));
-
-  //     // ReactNativeWasm::JavascriptAccessor::setGlobalVariableFunction(decodedName);
-
-  //     // auto functor_adapter = emscripten::val(runner)["opcall"].call<emscripten::val>("bind",
-  //     // emscripten::val(runner));
-
-  //    decodedObject->data.set(*decodedName->data, *wasmValue->data);
-  //   } else {
-  //     auto hostObject = static_cast<facebook::jsi::HostObject *>(decodedValueObject->data);
-
-  //     std::cout << "Runtime::setPropertyValue object global:" << decodedObject->global << " name:" << decodedName
-  //               << std::endl;
-
-  //     decodedObject->data.set(decodedName->data, *hostObject);
-  //   }
-  // } else {
-  //   throw std::logic_error("Not implemented");
-  // }
-  // throw std::logic_error("Not implemented");
-};
-
-void WasmFunctionCallback::invoke(Value *args) {
-  std::cout << "Calling a C++ function from JS" << std::endl;
-
-  auto runtimePtr = static_cast<ReactNativeWasm::Runtime *>(runtime);
-  Runtime &runtimeRef = *runtimePtr;
-
-  auto argsCount = args->getObject(runtimeRef).getArray(runtimeRef).size(runtimeRef);
-  auto thisVal = Value();
-
-  try {
-    this->callback(runtimeRef, thisVal, args, 1);
-  } catch (std::exception error) {
-    std::cerr << error.what() << std::endl;
-
-    throw error;
-  }
+  setPropertyValue(decodedObject, decodedName, value);
 }
 
-} // namespace ReactNativeWasm
+// if (value.isString()) {
+//   // ReactNativeWasm::JavascriptAccessor::setGlobalVariable(decodedName, wasmValue->str);
+// } else if (value.isObject()) {
+//   auto decodedValueObject = static_cast<const WasmObjectValue *>(getPointerValue(value));
 
-void runtimeInvokeFunction(std::string methodName, std::string jsonArgs) {
-  auto args = folly::parseJson(jsonArgs);
+//   if (isFunction(*decodedValueObject)) {
+//     std::cout << "Runtime::setPropertyValue function global:" << decodedObject->global << " name:" <<
+//     humanDecodedName
+//               << std::endl;
 
-  auto pair = ReactNativeWasm::runtimeMethods.find(methodName);
+//     auto wasmCallback = static_cast<WasmFunctionCallback *>(decodedValueObject->data);
 
-  if (pair != ReactNativeWasm::runtimeMethods.end()) {
-    auto runtime = static_cast<ReactNativeWasm::Runtime *>(pair->second->runtime);
-    Value args = facebook::jsi::valueFromDynamic(*runtime, std::move(folly::parseJson(jsonArgs)));
+//     ReactNativeWasm::runtimeMethods.insert(std::make_pair(humanDecodedName, wasmCallback));
+
+//     // auto runner = [this, object, decodedValueObject](const Value* args, size_t count) {
+//     //   auto function = static_cast<HostFunctionType *>(decodedValueObject->data);
+//     //   auto functionValue = *function;
+
+//     //   functionValue(*this, object, args, count);
+//     // };
+
+//     // auto runner = []() { std::cout << "Running C++s function from Javascript" << std::endl; };
+
+//     // emscripten::val method = emscripten::val::module_property("getDynCaller")(std::string("v"), int(runner));
+
+//     // ReactNativeWasm::JavascriptAccessor::setGlobalVariableFunction(decodedName);
+
+//     // auto functor_adapter = emscripten::val(runner)["opcall"].call<emscripten::val>("bind",
+//     // emscripten::val(runner));
+
+//    decodedObject->data.set(*decodedName->data, *wasmValue->data);
+//   } else {
+//     auto hostObject = static_cast<facebook::jsi::HostObject *>(decodedValueObject->data);
+
+//     std::cout << "Runtime::setPropertyValue object global:" << decodedObject->global << " name:" << decodedName
+//               << std::endl;
+
+//     decodedObject->data.set(decodedName->data, *hostObject);
+//   }
+// } else {
+//   throw std::logic_error("Not implemented");
+// }
+// throw std::logic_error("Not implemented");
+// };
+
+void Runtime::invoke(std::string methodName, std::string stringArgs) {
+  auto jsonArgs = folly::parseJson(stringArgs);
+
+  auto pair = runtimeMethods.find(methodName);
+
+  if (pair != runtimeMethods.end()) {
+    Value args = facebook::jsi::valueFromDynamic(*this, std::move(jsonArgs));
     Value *argsPtr = &args;
 
-    pair->second->invoke(argsPtr);
+    auto argsCount = argsPtr->getObject(*this).getArray(*this).size(*this);
+    auto thisVal = Value();
+
+    auto object = static_cast<const WasmObjectValue *>(pair->second);
+
+    try {
+      if (!object || !object->func) {
+        std::cerr << "Func is not defined" << std::endl;
+        throw std::logic_error("Func is not defined");
+      }
+      object->func(*this, std::move(thisVal), std::move(argsPtr), 1);
+    } catch (std::exception error) {
+      std::cerr << error.what() << std::endl;
+
+      throw error;
+    }
 
     return;
   }
 
   throw std::invalid_argument("No " + methodName + " method registered");
-
-  // auto wasmCallback = static_cast<ReactNativeWasm::WasmFunctionCallback *>(callback);
-  // callback->invoke();
 }
+
+} // namespace ReactNativeWasm
 
 EMSCRIPTEN_BINDINGS(ReactWasmRuntime) {
   emscripten::class_<facebook::jsi::HostObject>("jsiHostObject")
@@ -465,5 +531,7 @@ EMSCRIPTEN_BINDINGS(ReactWasmRuntime) {
     .function("get", &facebook::jsi::HostObject::get)
     .function("set", &facebook::jsi::HostObject::set);
 
-  emscripten::function("runtimeInvokeFunction", &runtimeInvokeFunction, emscripten::allow_raw_pointers());
+  emscripten::class_<ReactNativeWasm::Runtime>("Runtime")
+    .smart_ptr<std::shared_ptr<ReactNativeWasm::Runtime>>("Runtime")
+    .function("invoke", &ReactNativeWasm::Runtime::invoke);
 }

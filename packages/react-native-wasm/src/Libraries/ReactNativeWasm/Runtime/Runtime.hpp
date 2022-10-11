@@ -3,27 +3,11 @@
 #include <emscripten/val.h>
 #include <iostream>
 #include <jsi/jsi.h>
+#include <map>
 
 using namespace facebook::jsi;
 
 namespace ReactNativeWasm {
-class WasmRef {
-public:
-  WasmRef(void *runtime) : runtime(runtime){};
-
-  void *runtime;
-};
-
-class WasmFunctionCallback : public WasmRef {
-public:
-  WasmFunctionCallback(Runtime *runtime, HostFunctionType callback) : WasmRef(runtime), callback(callback){};
-
-  void invoke(Value *args);
-
-private:
-  HostFunctionType callback;
-};
-
 class Runtime : public facebook::jsi::Runtime {
 public:
   Runtime() noexcept;
@@ -100,17 +84,31 @@ public:
   void setPropertyValue(
     facebook::jsi::Object &, const facebook::jsi::String &name, const facebook::jsi::Value &value) override;
 
-protected:
-  class WasmObjectValue final : public PointerValue, public WasmRef {
-  public:
-    WasmObjectValue(Runtime *runtime, emscripten::val data) : WasmRef(runtime), data(data){};
+  void invoke(std::string methodName, std::string jsonArgs);
 
+protected:
+  class WasmObjectValue final : public PointerValue {
+  public:
+    WasmObjectValue(Runtime *runtime, HostFunctionType func) : func(func), isFunction(true){};
+    WasmObjectValue(Runtime *runtime, emscripten::val data) : data(data), isFunction(false){};
+
+    HostFunctionType func;
     emscripten::val data;
+    bool isFunction;
 
     void invalidate() override;
 
   protected:
     friend class Runtime;
   };
+
+  void setPropertyValue(
+    WasmObjectValue *decodedObject, const WasmObjectValue *decodedName, const facebook::jsi::Value &value);
+
+  // void setPropertyValue(WasmObjectValue *object, const WasmObjectValue * name, const WasmObjectValue * value);
+
+  // bool test;
+  // std::vector<std::string> test1;
+  // std::unique_ptr<std::map<std::string, const WasmObjectValue *>> runtimeMethods;
 };
 } // namespace ReactNativeWasm
