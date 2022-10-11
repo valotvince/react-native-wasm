@@ -92,7 +92,7 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
   return {
     name: 'lib-reactnative',
     definitions: ['__unused=[[maybe_unused]]'],
-    compilerFlags: ['-pthread'],
+    compilerFlags: ['-pthread', '-fexceptions'],
     includes: [
       '/usr/local/opt/glog/include',
       '/usr/local/opt/boost/include',
@@ -114,6 +114,7 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
       ].map((file) => path.join(reactNativeReactCommonDir, file)),
     ],
     sources: [
+      ...getFilesFromReactCommonDir('react/nativemodule/core/ReactCommon'),
       ...getFilesFromReactCommonDir('react/renderer/components/view'),
       ...getFilesFromReactCommonDir('react/renderer/components/root'),
       ...getFilesFromReactCommonDir('react/renderer/uimanager'),
@@ -137,8 +138,6 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
       ...[
         'react/bridging/LongLivedObject.cpp',
         'react/nativemodule/samples/ReactCommon/SampleTurboCxxModule.cpp',
-        'react/nativemodule/core/ReactCommon/TurboModule.cpp',
-        'react/nativemodule/core/ReactCommon/TurboModuleBinding.cpp',
         'reactperflogger/reactperflogger/BridgeNativeModulePerfLogger.cpp',
         'logger/react_native_log.cpp',
       ].map((file) => path.join(reactNativeReactCommonDir, file)),
@@ -191,7 +190,6 @@ const getReactNativeWasm = (reactNativeWasmDir, reactNativeDir) => {
       ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Config'),
       ...[
         'ReactWasmEntry.cpp',
-        'ReactWasmInstance.cpp',
         'Libraries/Utilities/Timing/Timing.cpp',
         'Libraries/Utilities/DevSettings/DevSettings.cpp',
         'Libraries/Utilities/PlatformConstants.cpp',

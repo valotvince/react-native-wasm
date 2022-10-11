@@ -38,7 +38,7 @@
 #include "Libraries/ReactNativeWasm/Scheduler/SchedulerDelegate.hpp"
 #include "Libraries/ReactNativeWasm/UIManager/UIManagerAnimationDelegate.hpp"
 #include "Libraries/ReactNativeWasm/UIManager/UIManagerModule.hpp"
-#include "ReactWasmInstance.hpp"
+#include "Libraries/Utilities/JavascriptAccessor/JavascriptAccessor.hpp"
 
 using UniqueCxxNativeModuleMap = std::unordered_map<std::string, facebook::xplat::module::CxxModule::Provider>;
 using UniqueNativeModuleVector = std::vector<std::unique_ptr<facebook::react::NativeModule>>;
@@ -46,7 +46,6 @@ using SharedReactNativeWasmComponentManagers = std::vector<std::shared_ptr<React
 using TurboModuleCache = std::unordered_map<std::string, std::shared_ptr<facebook::react::TurboModule>>;
 
 std::shared_ptr<facebook::react::Instance> reactInstance;
-std::shared_ptr<ReactNativeWasm::Instance> instance;
 std::shared_ptr<ReactNativeWasm::NativeQueue> nativeQueue;
 std::shared_ptr<facebook::react::Scheduler> reactScheduler;
 std::shared_ptr<ReactNativeWasm::UIManagerAnimationDelegate> uiManagerAnimationDelegate;
@@ -123,7 +122,6 @@ auto createComponentsRegistry() -> std::shared_ptr<facebook::react::ComponentDes
 }
 
 void run() {
-  instance = std::make_shared<ReactNativeWasm::Instance>();
   nativeQueue = std::make_shared<ReactNativeWasm::NativeQueue>();
   uiManagerAnimationDelegate = std::make_shared<ReactNativeWasm::UIManagerAnimationDelegate>();
   schedulerDelegate = std::make_shared<ReactNativeWasm::SchedulerDelegate>();
@@ -208,8 +206,6 @@ void run() {
     std::make_unique<InstanceCallback>(), std::make_shared<ReactNativeWasm::JSWasmExecutorFactory>(), nativeQueue,
     moduleRegistry);
 
-  // instance->setupRuntime(moduleRegistry, sharedModules);
-
   turboModuleCache = std::make_shared<TurboModuleCache>();
   longLivedObjectCollection_ = std::make_shared<facebook::react::LongLivedObjectCollection>();
 
@@ -261,7 +257,7 @@ void run() {
     *runtime, std::move(turboModuleInvoker), facebook::react::TurboModuleBindingMode::HostObject,
     longLivedObjectCollection_);
 
-  instance->loadBundle();
+  ReactNativeWasm::JavascriptAccessor::insertScriptTag("react-native.bundle.js");
 
   std::cout << "After loadBundle" << std::endl;
 }
