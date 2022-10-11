@@ -71,7 +71,10 @@ Runtime::PointerValue *Runtime::cloneBigInt(const Runtime::PointerValue *pv) {
 };
 Runtime::PointerValue *Runtime::cloneString(const Runtime::PointerValue *pv) {
   std::cout << "Runtime::cloneString" << std::endl;
-  throw std::logic_error("Not implemented");
+
+  auto object = static_cast<const WasmObjectValue *>(pv);
+
+  return new WasmObjectValue(this, emscripten::val(object->data));
 };
 Runtime::PointerValue *Runtime::cloneObject(const Runtime::PointerValue *pv) {
   std::cout << "Runtime::cloneObject" << std::endl;
@@ -86,7 +89,7 @@ Runtime::PointerValue *Runtime::cloneObject(const Runtime::PointerValue *pv) {
     return new WasmObjectValue(this, object->func);
   }
 
-  return new WasmObjectValue(this, object->data);
+  return new WasmObjectValue(this, emscripten::val(object->data));
 };
 Runtime::PointerValue *Runtime::clonePropNameID(const Runtime::PointerValue *pv) {
   std::cout << "Runtime::clonePropNameID" << std::endl;
@@ -491,16 +494,28 @@ void Runtime::setPropertyValue(
 // throw std::logic_error("Not implemented");
 // };
 
-void Runtime::invoke(std::string methodName, std::string stringArgs) {
-  auto jsonArgs = folly::parseJson(stringArgs);
-
+void Runtime::invoke(std::string methodName, emscripten::val jsonArgs) {
   auto pair = runtimeMethods.find(methodName);
 
-  if (pair != runtimeMethods.end()) {
-    Value args = facebook::jsi::valueFromDynamic(*this, std::move(jsonArgs));
-    Value *argsPtr = &args;
+  auto size = jsonArgs["length"].as<size_t>();
 
-    auto argsCount = argsPtr->getObject(*this).getArray(*this).size(*this);
+  if (pair != runtimeMethods.end()) {
+    Value stackArgs[size];
+
+    for (auto i = 0; i < size; i++) {
+      auto arg = jsonArgs[i];
+
+      if (arg.isString()) {
+        stackArgs[i] = Value(make<String>(new WasmObjectValue(this, std::move(arg))));
+      } else if (arg.isArray()) {
+        stackArgs[i] = Value(make<Object>(new WasmObjectValue(this, std::move(arg))).getArray(*this));
+      } else {
+        stackArgs[i] = Value(make<Object>(new WasmObjectValue(this, std::move(arg))));
+      }
+    }
+    Value *args = stackArgs;
+
+    // auto argsCount = argsPtr->getObject(*this).getArray(*this).size(*this);
     auto thisVal = Value();
 
     auto object = static_cast<const WasmObjectValue *>(pair->second);
@@ -510,7 +525,7 @@ void Runtime::invoke(std::string methodName, std::string stringArgs) {
         std::cerr << "Func is not defined" << std::endl;
         throw std::logic_error("Func is not defined");
       }
-      object->func(*this, std::move(thisVal), std::move(argsPtr), 1);
+      object->func(*this, std::move(thisVal), args, size);
     } catch (std::exception error) {
       std::cerr << error.what() << std::endl;
 
