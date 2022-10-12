@@ -7,7 +7,6 @@ std::string StatusBarManager::getName() { return "StatusBarManager"; }
 std::vector<Method> StatusBarManager::getMethods() {
   return {
     Method("setStyle", [](folly::dynamic /*args*/) noexcept {}),
-    Method("toto", [](folly::dynamic /*args*/) noexcept {}),
     Method("setHidden", [](folly::dynamic /*args*/) noexcept {}),
   };
 }

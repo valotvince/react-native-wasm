@@ -155,7 +155,6 @@ void initReactInstance() {
 }
 
 void initReactScheduler() {
-
   uiManagerAnimationDelegate = std::make_shared<ReactNativeWasm::UIManagerAnimationDelegate>();
   schedulerDelegate = std::make_shared<ReactNativeWasm::SchedulerDelegate>();
 
@@ -164,8 +163,6 @@ void initReactScheduler() {
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::RawTextManager>(renderer));
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::VirtualTextManager>(renderer));
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>(renderer));
-
-  std::cout << "React init bridge done" << std::endl;
 
   facebook::react::ContextContainer::Shared contextContainer = std::make_shared<facebook::react::ContextContainer>();
 
@@ -221,12 +218,8 @@ void initReactScheduler() {
   // backgroundExecutor_ = JBackgroundExecutor::create("fabric_bg");
   toolbox.backgroundExecutor = [](std::function<void()> &&callback) { nativeQueue->runOnQueue(std::move(callback)); };
 
-  std::cout << "Begin creating scheduler" << std::endl;
-
   reactScheduler =
     std::make_shared<facebook::react::Scheduler>(toolbox, uiManagerAnimationDelegate.get(), schedulerDelegate.get());
-
-  std::cout << "Finished creating scheduler" << std::endl;
 }
 
 void installTurboModulesBindings() {

@@ -94,7 +94,7 @@ public:
   static const PointerValue *getPublicPointerValue(const Value &value);
 
   emscripten::val toEmscriptenVal(const Value &value);
-  Value toValue(emscripten::val val);
+  Value toValue(emscripten::val val, std::string name = "");
   emscripten::val invokeHostFunction(HostFunctionType func, emscripten::val jsonArgs);
 
   class HostObjectProxy {
@@ -109,11 +109,14 @@ public:
   public:
     WasmObjectValue(Runtime *runtime, HostFunctionType func) : func(func), isFunction(true), isHostObjectProxy(false){};
     WasmObjectValue(Runtime *runtime, emscripten::val data) : data(data), isFunction(false), isHostObjectProxy(false){};
+    WasmObjectValue(Runtime *runtime, emscripten::val data, const std::string name)
+      : data(data), name(name), isFunction(false), isHostObjectProxy(false){};
     WasmObjectValue(Runtime *runtime, std::shared_ptr<HostObjectProxy> hostObjectProxy)
       : hostObjectProxy(hostObjectProxy), isFunction(false), isHostObjectProxy(true){};
 
     HostFunctionType func;
     emscripten::val data;
+    const std::string name;
     std::shared_ptr<HostObjectProxy> hostObjectProxy;
 
     bool isFunction;

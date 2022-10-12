@@ -46,10 +46,7 @@ Runtime::evaluatePreparedJavaScript(const std::shared_ptr<const facebook::jsi::P
   return 0;
 };
 
-bool Runtime::drainMicrotasks(int maxMicrotasksHint) {
-  std::cout << "Runtime::drainMicrotasks" << std::endl;
-  return false;
-};
+bool Runtime::drainMicrotasks(int maxMicrotasksHint) { return true; };
 
 facebook::jsi::Object Runtime::global() {
   auto window = emscripten::val::global("window");
@@ -90,6 +87,10 @@ Runtime::PointerValue *Runtime::cloneObject(const Runtime::PointerValue *pv) {
     return new WasmObjectValue(this, object->hostObjectProxy);
   }
 
+  if (!object->name.empty()) {
+    return new WasmObjectValue(this, object->data, object->name);
+  }
+
   return new WasmObjectValue(this, emscripten::val(object->data));
 };
 Runtime::PointerValue *Runtime::clonePropNameID(const Runtime::PointerValue *pv) {
@@ -97,8 +98,6 @@ Runtime::PointerValue *Runtime::clonePropNameID(const Runtime::PointerValue *pv)
   throw std::logic_error("Not implemented");
 };
 PropNameID Runtime::createPropNameIDFromString(const String &str) {
-  std::cout << "Runtime::createPropNameIDFromString" << std::endl;
-
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(str));
 
   auto val = emscripten::val(decodedObject->data);
@@ -145,24 +144,6 @@ Object Runtime::createObject() {
 };
 Object Runtime::createObject(std::shared_ptr<HostObject> ho) {
   std::cout << "Runtime::createObject 2" << std::endl;
-
-  // obj.set("get", [](emscripten::val name) {
-  //   std::cout << name.as<std::string>() << std::endl;
-  // });
-
-  // auto obj = emscripten::val::object();
-  // auto properties = ho->getPropertyNames(*this);
-
-  // for (auto it = properties.begin(); it < properties.end(); ++it) {
-  //   auto propertyName = it->utf8(*this);
-
-  //   obj.set(propertyName, emscripten::val::null());
-
-  //   auto property = ho->get(*this, *it);
-  //   auto wasmValue = static_cast<const WasmObjectValue *>(getPointerValue(property));
-
-  //   std::cout << "property:" << propertyName << " " << wasmValue->isFunction << std::endl;
-  // }
 
   auto proxy = std::make_shared<ReactNativeWasm::Runtime::HostObjectProxy>(*this, ho);
 
@@ -232,7 +213,7 @@ emscripten::val Runtime::toEmscriptenVal(const Value &value) {
   }
 }
 
-Value Runtime::toValue(emscripten::val val) {
+Value Runtime::toValue(emscripten::val val, std::string name) {
   if (val.isUndefined()) {
     return Value();
   } else if (val.isNull()) {
@@ -241,6 +222,16 @@ Value Runtime::toValue(emscripten::val val) {
     return Value(val.as<bool>());
   } else if (val.isNumber()) {
     return Value(val.as<double>());
+  } else if (val.isString()) {
+    return Value(make<String>(new WasmObjectValue(this, std::move(val))));
+  } else if (val.isArray()) {
+    return Value(make<Object>(new WasmObjectValue(this, std::move(val))).getArray(*this));
+  }
+
+  auto typeOf = val.typeOf().as<std::string>();
+
+  if (typeOf == "function") {
+    return Value(make<Object>(new WasmObjectValue(this, std::move(val), std::move(name))));
   }
 
   return Value(make<Object>(new WasmObjectValue(this, std::move(val))));
@@ -261,24 +252,59 @@ Value Runtime::call(const Function &function, const Value &jsThis, const Value *
 
   emscripten::val returnValue;
 
-  // Uglier could not be possible, but i'll refactor it once I understand cpp pack/unpack
-  // TODO: Use argument unpack
-  switch (count) {
-  case 1:
-    returnValue = decodedFunction->data(jsArgs[0]);
-    break;
-  case 2:
-    returnValue = decodedFunction->data(jsArgs[0], jsArgs[1]);
-    break;
-  case 3:
-    returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2]);
-    break;
-  case 4:
-    returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2], jsArgs[3]);
-    break;
+  auto methodName = decodedFunction->name.c_str();
+
+  if (!jsThis.isUndefined()) {
+    auto decodedThis = static_cast<const WasmObjectValue *>(getPointerValue(jsThis));
+
+    // Uglier could not be possible, but i'll refactor it once I understand cpp pack/unpack
+    // TODO: Use argument unpack
+    switch (count) {
+    case 0:
+      returnValue = decodedThis->data.call<emscripten::val>(methodName);
+      break;
+    case 1:
+      returnValue = decodedThis->data.call<emscripten::val>(methodName, jsArgs[0]);
+      break;
+    case 2:
+      returnValue = decodedThis->data.call<emscripten::val>(methodName, jsArgs[0], jsArgs[1]);
+      break;
+    case 3:
+      returnValue = decodedThis->data.call<emscripten::val>(methodName, jsArgs[0], jsArgs[1], jsArgs[2]);
+      break;
+    case 4:
+      returnValue = decodedThis->data.call<emscripten::val>(methodName, jsArgs[0], jsArgs[1], jsArgs[2], jsArgs[3]);
+      break;
+    default:
+      throw std::logic_error("You should add more cases because of your lack of skills");
+      break;
+    }
+  } else {
+    // Uglier could not be possible, but i'll refactor it once I understand cpp pack/unpack
+    // TODO: Use argument unpack
+    switch (count) {
+    case 0:
+      returnValue = decodedFunction->data();
+      break;
+    case 1:
+      returnValue = decodedFunction->data(jsArgs[0]);
+      break;
+    case 2:
+      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1]);
+      break;
+    case 3:
+      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2]);
+      break;
+    case 4:
+      returnValue = decodedFunction->data(jsArgs[0], jsArgs[1], jsArgs[2], jsArgs[3]);
+      break;
+    default:
+      throw std::logic_error("You should add more cases because of your lack of skills");
+      break;
+    }
   }
 
-  return toValue(returnValue);
+  return toValue(returnValue, "");
 };
 Value Runtime::getProperty(const Object &object, const PropNameID &name) {
   auto decodedName = utf8(name);
@@ -286,7 +312,7 @@ Value Runtime::getProperty(const Object &object, const PropNameID &name) {
 
   std::cout << "Runtime::getProperty 1 " << decodedName << std::endl;
 
-  return toValue(decodedObject->data[decodedName]);
+  return toValue(decodedObject->data[decodedName], decodedName);
 };
 Value Runtime::getProperty(const Object &object, const String &name) {
   auto decodedName = utf8(name);
@@ -294,19 +320,25 @@ Value Runtime::getProperty(const Object &object, const String &name) {
 
   std::cout << "Runtime::getProperty 2 " << decodedName << std::endl;
 
-  return toValue(decodedObject->data[decodedName]);
+  return toValue(decodedObject->data[decodedName], decodedName);
 };
 bool Runtime::hasProperty(const Object &object, const PropNameID &name) {
   auto decodedName = utf8(name);
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  return decodedObject->data.hasOwnProperty(decodedName.c_str());
+  std::cout << "hasProperty PropNameId " << decodedName << decodedObject->data.hasOwnProperty(decodedName.c_str())
+            << std::endl;
+
+  return !decodedObject->data[decodedName.c_str()].isUndefined();
 };
 bool Runtime::hasProperty(const Object &object, const String &name) {
   auto decodedName = utf8(name);
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  return decodedObject->data.hasOwnProperty(decodedName.c_str());
+  std::cout << "hasProperty String " << decodedName << decodedObject->data.hasOwnProperty(decodedName.c_str())
+            << std::endl;
+
+  return !decodedObject->data[decodedName.c_str()].isUndefined();
 };
 
 bool Runtime::isArray(const Object &object) const {
@@ -381,7 +413,7 @@ Value Runtime::getValueAtIndex(const Array &object, size_t i) {
 
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  return toValue(decodedObject->data[i]);
+  return toValue(decodedObject->data[i], "");
 };
 void Runtime::setValueAtIndexImpl(Array &object, size_t i, const Value &value) {
   auto decodedObject = static_cast<WasmObjectValue *>(getPointerValue(object));
@@ -403,6 +435,7 @@ bool Runtime::strictEquals(const String &a, const String &b) const {
 };
 bool Runtime::strictEquals(const Object &a, const Object &b) const {
   std::cout << "Runtime::strictEquals 4" << std::endl;
+  throw std::logic_error("Not implemented");
 };
 bool Runtime::instanceOf(const Object &o, const Function &f) {
   std::cout << "Runtime::instanceOf" << std::endl;
@@ -465,15 +498,7 @@ emscripten::val Runtime::invokeHostFunction(HostFunctionType func, emscripten::v
   Value stackArgs[size];
 
   for (auto i = 0; i < size; i++) {
-    auto arg = jsonArgs[i];
-
-    if (arg.isString()) {
-      stackArgs[i] = Value(make<String>(new WasmObjectValue(this, std::move(arg))));
-    } else if (arg.isArray()) {
-      stackArgs[i] = Value(make<Object>(new WasmObjectValue(this, std::move(arg))).getArray(*this));
-    } else {
-      stackArgs[i] = Value(make<Object>(new WasmObjectValue(this, std::move(arg))));
-    }
+    stackArgs[i] = toValue(jsonArgs[i], "");
   }
   Value *args = stackArgs;
 
