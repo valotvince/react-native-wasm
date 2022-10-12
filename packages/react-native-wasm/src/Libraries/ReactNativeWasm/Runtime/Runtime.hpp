@@ -8,6 +8,7 @@
 using namespace facebook::jsi;
 
 namespace ReactNativeWasm {
+
 class Runtime : public facebook::jsi::Runtime {
 public:
   Runtime() noexcept;
@@ -86,22 +87,45 @@ public:
 
   emscripten::val invoke(std::string methodName, emscripten::val jsonArgs);
 
-protected:
+public:
+  // TODO Find out a way to remove that ugly code
+  static PointerValue *getPublicPointerValue(Pointer &pointer);
+  static const PointerValue *getPublicPointerValue(const Pointer &pointer);
+  static const PointerValue *getPublicPointerValue(const Value &value);
+
+  emscripten::val toEmscriptenVal(const Value &value);
+  emscripten::val invokeHostFunction(HostFunctionType func, emscripten::val jsonArgs);
+
+  class HostObjectProxy {
+  public:
+    HostObjectProxy(Runtime &runtime, std::shared_ptr<facebook::jsi::HostObject> ho) : runtime(runtime), ho(ho){};
+
+    ReactNativeWasm::Runtime &runtime;
+    std::shared_ptr<facebook::jsi::HostObject> ho;
+  };
+
   class WasmObjectValue final : public PointerValue {
   public:
-    WasmObjectValue(Runtime *runtime, HostFunctionType func) : func(func), isFunction(true){};
-    WasmObjectValue(Runtime *runtime, emscripten::val data) : data(data), isFunction(false){};
+    WasmObjectValue(Runtime *runtime, HostFunctionType func) : func(func), isFunction(true), isHostObjectProxy(false){};
+    WasmObjectValue(Runtime *runtime, emscripten::val data) : data(data), isFunction(false), isHostObjectProxy(false){};
+    WasmObjectValue(Runtime *runtime, std::shared_ptr<HostObjectProxy> hostObjectProxy)
+      : hostObjectProxy(hostObjectProxy), isFunction(false), isHostObjectProxy(true){};
 
     HostFunctionType func;
     emscripten::val data;
+    std::shared_ptr<HostObjectProxy> hostObjectProxy;
+
     bool isFunction;
+    bool isHostObjectProxy;
 
     void invalidate() override;
 
   protected:
-    friend class Runtime;
+    friend class facebook::jsi::Runtime;
+    friend class HostObjectProxy;
   };
 
+protected:
   void setPropertyValue(
     WasmObjectValue *decodedObject, const WasmObjectValue *decodedName, const facebook::jsi::Value &value);
 

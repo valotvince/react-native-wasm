@@ -24,7 +24,10 @@
 #include <react/utils/ContextContainer.h>
 
 #include "Libraries/Utilities/DevSettings/DevSettings.hpp"
+#include "Libraries/Utilities/DeviceInfo/DeviceInfo.hpp"
 #include "Libraries/Utilities/PlatformConstants.hpp"
+#include "Libraries/Utilities/SourceCode/SourceCode.hpp"
+#include "Libraries/Utilities/StatusBarManager/StatusBarManager.hpp"
 #include "Libraries/Utilities/Timing/Timing.hpp"
 
 #include "Libraries/Components/Text/RawTextManager.hpp"
@@ -66,10 +69,13 @@ UniqueCxxNativeModuleMap getCxxNativeModules() {
   modules.insert({"PlatformConstants", []() { return std::make_unique<facebook::react::PlatformConstantsModule>(); }});
   modules.insert({"DevSettings", []() { return std::make_unique<ReactNativeWasm::DevSettings>(); }});
   modules.insert({"UIManager", []() {
-    return std::make_unique<ReactNativeWasm::UIManagerModule>(
-      reactScheduler->getUIManager(), componentManagers, renderer);
-  }});
+                    return std::make_unique<ReactNativeWasm::UIManagerModule>(
+                      reactScheduler->getUIManager(), componentManagers, renderer);
+                  }});
   modules.insert({"Timing", []() { return std::make_unique<ReactNativeWasm::Timing>(); }});
+  modules.insert({"DeviceInfo", []() { return std::make_unique<ReactNativeWasm::DeviceInfo>(); }});
+  modules.insert({"SourceCode", []() { return std::make_unique<ReactNativeWasm::SourceCode>(); }});
+  modules.insert({"StatusBarManager", []() { return std::make_unique<ReactNativeWasm::StatusBarManager>(); }});
 
   return modules;
 }
@@ -84,6 +90,15 @@ UniqueNativeModuleVector getNativeModules(
 
   modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
     instance, "DevSettings", []() { return std::make_unique<ReactNativeWasm::DevSettings>(); }, nativeQueue));
+
+  modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
+    instance, "DeviceInfo", []() { return std::make_unique<ReactNativeWasm::DevSettings>(); }, nativeQueue));
+
+  modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
+    instance, "SourceCode", []() { return std::make_unique<ReactNativeWasm::SourceCode>(); }, nativeQueue));
+
+  modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
+    instance, "StatusBarManager", []() { return std::make_unique<ReactNativeWasm::StatusBarManager>(); }, nativeQueue));
 
   modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
     instance, "UIManager",
@@ -229,22 +244,22 @@ void run() {
 
     auto turboModuleLookup = turboModuleCacheLocked->find(name);
     if (turboModuleLookup != turboModuleCacheLocked->end()) {
-    std::cout << "Found Module cached !" << std::endl;
+      std::cout << "Found Module cached !" << std::endl;
 
       return turboModuleLookup->second;
     }
 
-
     auto nativeModuleLookup = nativeModulesLocked->find(name);
 
     if (nativeModuleLookup != nativeModulesLocked->end()) {
-        std::cout << "Found Module !" << std::endl;
+      std::cout << "Found Module !" << std::endl;
 
-        auto turboModule = std::make_shared<facebook::react::TurboCxxModule>(nativeModuleLookup->second(), jsInvokerLocked);
+      auto turboModule =
+        std::make_shared<facebook::react::TurboCxxModule>(nativeModuleLookup->second(), jsInvokerLocked);
 
-        turboModuleCacheLocked->insert({nativeModuleLookup->first, turboModule});
+      turboModuleCacheLocked->insert({nativeModuleLookup->first, turboModule});
 
-        return turboModule;
+      return turboModule;
     }
 
     return nullptr;
@@ -272,11 +287,6 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void onBundleLoaded() {
-  folly::dynamic params =
-    folly::dynamic::array(std::move("main"), folly::dynamic::object("initialProps", {})("rootTag", 11)("fabric", true));
-
-  // reactInstance->callJSFunction("AppRegistry", "runApplication", std::move(params));
-}
+void onBundleLoaded() { std::cout << "Bundle loaded !" << std::endl; }
 
 EMSCRIPTEN_BINDINGS(ReactWasmEntry) { emscripten::function("__onBundleLoaded", &onBundleLoaded); }

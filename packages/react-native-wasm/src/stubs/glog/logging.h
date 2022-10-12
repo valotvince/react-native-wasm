@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
 // TODO: Use actual glog
 // TODO: Using actual glog non-trivial as it uses Desktop only APIs
 // TODO: Maybe implement glog header in terms of Windows'
