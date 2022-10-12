@@ -45,50 +45,43 @@ mergeInto(LibraryManager.library, {
       document.body.appendChild(script);
   },
 
-  fbBatchedBridge__proxy: 'sync',
-  fbBatchedBridge: async function (methodName, args) {
-    try {
-      const decodedMethodName = UTF8ToString(methodName);
-      const decodedArgs = JSON.parse(UTF8ToString(args));
+  setGlobalVariableObject__proxy: 'sync',
+  setGlobalVariableObject: function(name) {
+    const decodedName = UTF8ToString(name);
 
-      console.log('Debug: fbBatchedBridge', decodedMethodName, ...decodedArgs);
+    const logPrefix = `[object][${decodedName}]`;
 
-      const result = window.__fbBatchedBridge[decodedMethodName].call(window.__fbBatchedBridge, ...decodedArgs);
+    console.log(logPrefix, 'Registering object');
 
-      console.log('Debug: fbBatchedBridge result:', result);
+    const nativeObject = window[`native__${decodedName}`];
 
-      return allocateUTF8(JSON.stringify(result));
-    } catch (error) {
-      console.error(error);
-    }
+    window[decodedName] = createHostObjectProxy(logPrefix, nativeObject);
   },
+
   setGlobalVariableFunction__proxy: 'sync',
   setGlobalVariableFunction: function (name) {
     const decodedName = UTF8ToString(name);
 
-    console.log('setGlobalVariableFunction', decodedName);
+    const logPrefix = `[function][${decodedName}]`;
 
-    console.log(Module.WasmRuntime)
+    console.log(logPrefix, decodedName);
 
-    window[decodedName] = (...args) => window.WasmRuntime.invoke(decodedName, args);
+    window[decodedName] = (...args) => {
+      console.log(logPrefix, 'Called with', args);
 
-    // console.log('setGlobalVariableFunction', window[decodedName])
-  },
-  setGlobalVariableObject__proxy: 'sync',
-  setGlobalVariableObject: function (name, objectPointer) {
-    console.log('Debug: setGlobalVariableObject', UTF8ToString(name), objectPointer);
+      const result = window.WasmRuntime.invoke(decodedName, args);
 
-    // window[UTF8ToString(name)] = {};
-  },
-  setGlobalVariable__proxy: 'sync',
-  setGlobalVariable: function (name, value) {
-    const decodedName = UTF8ToString(name);
-    const decodedValue = UTF8ToString(value);
+      console.log(logPrefix, 'result', result);
 
-    try {
-      window[decodedName] = JSON.parse(decodedValue);
-    } catch {
-      window[decodedName] = decodedValue
+      if (decodedName === '__turboModuleProxy') {
+        if (!result) {
+          return result;
+        }
+
+        return createHostObjectProxy(logPrefix, result);
+      }
+
+      return result;
     }
-  },
+  }
 });
