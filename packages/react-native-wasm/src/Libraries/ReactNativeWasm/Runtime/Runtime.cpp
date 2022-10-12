@@ -232,13 +232,24 @@ emscripten::val Runtime::toEmscriptenVal(const Value &value) {
   }
 }
 
+Value Runtime::toValue(emscripten::val val) {
+  if (val.isUndefined()) {
+    return Value();
+  } else if (val.isNull()) {
+    return Value(nullptr);
+  } else if (val.isTrue() || val.isFalse()) {
+    return Value(val.as<bool>());
+  } else if (val.isNumber()) {
+    return Value(val.as<double>());
+  }
+
+  return Value(make<Object>(new WasmObjectValue(this, std::move(val))));
+}
+
 Value Runtime::call(const Function &function, const Value &jsThis, const Value *args, size_t count) {
   std::cout << "Runtime::call" << std::endl;
 
   auto decodedFunction = static_cast<const WasmObjectValue *>(getPointerValue(function));
-  auto decodedArgs = static_cast<const WasmObjectValue *>(getPointerValue(*args));
-
-  std::cout << decodedArgs->data.typeOf().as<std::string>() << std::endl;
 
   std::vector<emscripten::val> jsArgs;
 
@@ -267,7 +278,7 @@ Value Runtime::call(const Function &function, const Value &jsThis, const Value *
     break;
   }
 
-  return Value(make<Object>(new WasmObjectValue(this, std::move(returnValue))));
+  return toValue(returnValue);
 };
 Value Runtime::getProperty(const Object &object, const PropNameID &name) {
   auto decodedName = utf8(name);
@@ -275,13 +286,7 @@ Value Runtime::getProperty(const Object &object, const PropNameID &name) {
 
   std::cout << "Runtime::getProperty 1 " << decodedName << std::endl;
 
-  auto val = decodedObject->data;
-
-  std::cout << val[decodedName].typeOf().as<std::string>() << std::endl;
-
-  auto propertyValue = val[decodedName];
-
-  return Value(make<Object>(new WasmObjectValue(this, std::move(propertyValue))));
+  return toValue(decodedObject->data[decodedName]);
 };
 Value Runtime::getProperty(const Object &object, const String &name) {
   auto decodedName = utf8(name);
@@ -289,13 +294,7 @@ Value Runtime::getProperty(const Object &object, const String &name) {
 
   std::cout << "Runtime::getProperty 2 " << decodedName << std::endl;
 
-  auto val = decodedObject->data;
-
-  std::cout << val[decodedName].typeOf().as<std::string>() << std::endl;
-
-  auto propertyValue = val[decodedName];
-
-  return Value(make<Object>(new WasmObjectValue(this, std::move(propertyValue))));
+  return toValue(decodedObject->data[decodedName]);
 };
 bool Runtime::hasProperty(const Object &object, const PropNameID &name) {
   auto decodedName = utf8(name);
@@ -342,8 +341,11 @@ bool Runtime::isHostFunction(const Function &) const {
   std::cout << "Runtime::isHostFunction" << std::endl;
   throw std::logic_error("Not implemented");
 };
-Array Runtime::getPropertyNames(const Object &) {
+Array Runtime::getPropertyNames(const Object &object) {
   std::cout << "Runtime::getPropertyNames" << std::endl;
+
+  auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
+
   throw std::logic_error("Not implemented");
 };
 WeakObject Runtime::createWeakObject(const Object &) {
@@ -379,9 +381,7 @@ Value Runtime::getValueAtIndex(const Array &object, size_t i) {
 
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  auto val = decodedObject->data[i];
-
-  return Value(make<Object>(new WasmObjectValue(this, std::move(val))));
+  return toValue(decodedObject->data[i]);
 };
 void Runtime::setValueAtIndexImpl(Array &object, size_t i, const Value &value) {
   auto decodedObject = static_cast<WasmObjectValue *>(getPointerValue(object));
@@ -412,8 +412,6 @@ bool Runtime::instanceOf(const Object &o, const Function &f) {
 void Runtime::setPropertyValue(
   WasmObjectValue *decodedObject, const WasmObjectValue *decodedName, const facebook::jsi::Value &value) {
   auto humanDecodedName = decodedName->data.as<std::string>();
-
-  std::cout << "Runtime::setPropertyValue " << humanDecodedName << value.isNull() << std::endl;
 
   if (value.isNull()) {
     decodedObject->data.set(decodedName->data, emscripten::val::null());

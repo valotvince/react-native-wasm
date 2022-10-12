@@ -18,9 +18,15 @@
 #include <react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h>
 #include <react/renderer/components/view/ViewComponentDescriptor.h>
 #include <react/renderer/core/EventBeat.h>
+#include <react/renderer/core/LayoutConstraints.h>
+#include <react/renderer/core/LayoutContext.h>
+#include <react/renderer/core/LayoutPrimitives.h>
+#include <react/renderer/core/ReactPrimitives.h>
+#include <react/renderer/mounting/ShadowTree.h>
 #include <react/renderer/runtimescheduler/RuntimeScheduler.h>
 #include <react/renderer/scheduler/Scheduler.h>
 #include <react/renderer/scheduler/SchedulerToolbox.h>
+#include <react/renderer/scheduler/SurfaceHandler.h>
 #include <react/utils/ContextContainer.h>
 
 #include "Libraries/Utilities/DevSettings/DevSettings.hpp"
@@ -136,8 +142,20 @@ auto createComponentsRegistry() -> std::shared_ptr<facebook::react::ComponentDes
   return providerRegistry;
 }
 
-void run() {
+void initReactInstance() {
   nativeQueue = std::make_shared<ReactNativeWasm::NativeQueue>();
+  reactInstance = std::make_shared<facebook::react::Instance>();
+
+  auto moduleRegistry =
+    std::make_shared<facebook::react::ModuleRegistry>(std::move(getNativeModules(reactInstance, nativeQueue)));
+
+  reactInstance->initializeBridge(
+    std::make_unique<InstanceCallback>(), std::make_shared<ReactNativeWasm::JSWasmExecutorFactory>(), nativeQueue,
+    moduleRegistry);
+}
+
+void initReactScheduler() {
+
   uiManagerAnimationDelegate = std::make_shared<ReactNativeWasm::UIManagerAnimationDelegate>();
   schedulerDelegate = std::make_shared<ReactNativeWasm::SchedulerDelegate>();
 
@@ -147,7 +165,7 @@ void run() {
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::VirtualTextManager>(renderer));
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>(renderer));
 
-  reactInstance = std::make_shared<facebook::react::Instance>();
+  std::cout << "React init bridge done" << std::endl;
 
   facebook::react::ContextContainer::Shared contextContainer = std::make_shared<facebook::react::ContextContainer>();
 
@@ -203,23 +221,16 @@ void run() {
   // backgroundExecutor_ = JBackgroundExecutor::create("fabric_bg");
   toolbox.backgroundExecutor = [](std::function<void()> &&callback) { nativeQueue->runOnQueue(std::move(callback)); };
 
-  try {
-    reactScheduler =
-      std::make_shared<facebook::react::Scheduler>(toolbox, uiManagerAnimationDelegate.get(), schedulerDelegate.get());
-  } catch (std::exception e) {
-    std::cerr << "Exception: " << e.what() << std::endl;
+  std::cout << "Begin creating scheduler" << std::endl;
 
-    throw e;
-  }
+  reactScheduler =
+    std::make_shared<facebook::react::Scheduler>(toolbox, uiManagerAnimationDelegate.get(), schedulerDelegate.get());
 
+  std::cout << "Finished creating scheduler" << std::endl;
+}
+
+void installTurboModulesBindings() {
   nativeModules = std::make_shared<UniqueCxxNativeModuleMap>(getCxxNativeModules());
-
-  auto moduleRegistry =
-    std::make_shared<facebook::react::ModuleRegistry>(std::move(getNativeModules(reactInstance, nativeQueue)));
-
-  reactInstance->initializeBridge(
-    std::make_unique<InstanceCallback>(), std::make_shared<ReactNativeWasm::JSWasmExecutorFactory>(), nativeQueue,
-    moduleRegistry);
 
   turboModuleCache = std::make_shared<TurboModuleCache>();
   longLivedObjectCollection_ = std::make_shared<facebook::react::LongLivedObjectCollection>();
@@ -271,6 +282,12 @@ void run() {
   facebook::react::TurboModuleBinding::install(
     *runtime, std::move(turboModuleInvoker), facebook::react::TurboModuleBindingMode::HostObject,
     longLivedObjectCollection_);
+}
+
+void run() {
+  initReactInstance();
+  installTurboModulesBindings();
+  initReactScheduler();
 
   ReactNativeWasm::JavascriptAccessor::insertScriptTag("react-native.bundle.js");
 
@@ -287,6 +304,25 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void onBundleLoaded() { std::cout << "Bundle loaded !" << std::endl; }
+void onBundleLoaded() {
+  std::cout << "Bundle loaded !" << std::endl;
+
+  auto surfaceId = 11;
+
+  auto layoutContext = facebook::react::LayoutContext{};
+  layoutContext.pointScaleFactor = 1;
+
+  auto layoutConstraints = facebook::react::LayoutConstraints{};
+  layoutConstraints.layoutDirection = facebook::react::LayoutDirection::LeftToRight;
+
+  auto surfaceHandler = facebook::react::SurfaceHandler{"main", surfaceId};
+  surfaceHandler.setContextContainer(reactScheduler->getContextContainer());
+  surfaceHandler.setProps(folly::dynamic::object());
+  surfaceHandler.constraintLayout(layoutConstraints, layoutContext);
+
+  reactScheduler->registerSurface(surfaceHandler);
+
+  surfaceHandler.start();
+}
 
 EMSCRIPTEN_BINDINGS(ReactWasmEntry) { emscripten::function("__onBundleLoaded", &onBundleLoaded); }

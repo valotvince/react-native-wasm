@@ -94,6 +94,7 @@ public:
   static const PointerValue *getPublicPointerValue(const Value &value);
 
   emscripten::val toEmscriptenVal(const Value &value);
+  Value toValue(emscripten::val val);
   emscripten::val invokeHostFunction(HostFunctionType func, emscripten::val jsonArgs);
 
   class HostObjectProxy {
