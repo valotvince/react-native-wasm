@@ -12,7 +12,7 @@ extern "C" {
 namespace ReactNativeWasm::JavascriptAccessor {
 extern void setGlobalVariableFunction(const char *);
 extern void setGlobalVariableObject(const char *);
-extern void registerObjectFunction(emscripten::EM_VAL, const char*);
+extern void registerObjectFunction(emscripten::EM_VAL, const char *);
 } // namespace ReactNativeWasm::JavascriptAccessor
 }
 
@@ -559,60 +559,62 @@ EMSCRIPTEN_BINDINGS(ReactWasmRuntime) {
     .smart_ptr<std::shared_ptr<ReactNativeWasm::Runtime::HostObjectProxy>>("HostObjectProxy")
     .function(
       "runFunction",
-      emscripten::optional_override(
-        [](ReactNativeWasm::Runtime::HostObjectProxy &self, emscripten::val jsThis, std::string functionName, emscripten::val jsonArgs) {
-          std::cout << "HostObjectProxy::get Trying to get function: '" << functionName << "'" << std::endl;
+      emscripten::optional_override([](
+                                      ReactNativeWasm::Runtime::HostObjectProxy &self, emscripten::val jsThis,
+                                      std::string functionName, emscripten::val jsonArgs) {
+        std::cout << "HostObjectProxy::get Trying to get function: '" << functionName << "'" << std::endl;
 
-          auto propName = facebook::jsi::PropNameID::forAscii(self.runtime, functionName.c_str(), functionName.size());
+        auto propName = facebook::jsi::PropNameID::forAscii(self.runtime, functionName.c_str(), functionName.size());
 
-          HostFunctionType func;
+        HostFunctionType func;
 
-          auto methodLookup = self.methods.find(functionName);
+        auto methodLookup = self.methods.find(functionName);
 
-          if (methodLookup != self.methods.end()) {
-            func = methodLookup->second;
-          } else {
-            auto value = self.ho->get(self.runtime, propName);
+        if (methodLookup != self.methods.end()) {
+          func = methodLookup->second;
+        } else {
+          auto value = self.ho->get(self.runtime, propName);
 
-            auto wasmValue = static_cast<const ReactNativeWasm::Runtime::WasmObjectValue *>(
-              ReactNativeWasm::Runtime::getPublicPointerValue(value));
-
-            if (!wasmValue->isFunction) {
-              std::cerr << "Property is not a function" << std::endl;
-
-              throw new std::invalid_argument("Property is not a function");
-            }
-
-            func = wasmValue->func;
-          }
-
-          return self.runtime.invokeHostFunction(func, jsonArgs);
-        }))
-    .function(
-      "get",
-      emscripten::optional_override([](ReactNativeWasm::Runtime::HostObjectProxy &self, emscripten::val jsThis, std::string propertyName) {
-        std::cout << "HostObjectProxy::get Trying to get property: '" << propertyName << "'" << std::endl;
-
-        auto propName = facebook::jsi::PropNameID::forAscii(self.runtime, propertyName.c_str(), propertyName.size());
-
-        auto value = self.ho->get(self.runtime, propName);
-
-        if (value.isObject()) {
           auto wasmValue = static_cast<const ReactNativeWasm::Runtime::WasmObjectValue *>(
             ReactNativeWasm::Runtime::getPublicPointerValue(value));
 
-          if (wasmValue->isFunction) {
-            auto methodLookup = self.methods.find(propertyName);
+          if (!wasmValue->isFunction) {
+            std::cerr << "Property is not a function" << std::endl;
 
-            if (methodLookup == self.methods.end()) {
-              self.methods.insert({propertyName, wasmValue->func});
-              ReactNativeWasm::JavascriptAccessor::registerObjectFunction(jsThis.as_handle(), propertyName.c_str());
-            }
+            throw new std::invalid_argument("Property is not a function");
           }
+
+          func = wasmValue->func;
         }
 
-        return self.runtime.toEmscriptenVal(jsThis, value);
-      }));
+        return self.runtime.invokeHostFunction(func, jsonArgs);
+      }))
+    .function(
+      "get",
+      emscripten::optional_override(
+        [](ReactNativeWasm::Runtime::HostObjectProxy &self, emscripten::val jsThis, std::string propertyName) {
+          std::cout << "HostObjectProxy::get Trying to get property: '" << propertyName << "'" << std::endl;
+
+          auto propName = facebook::jsi::PropNameID::forAscii(self.runtime, propertyName.c_str(), propertyName.size());
+
+          auto value = self.ho->get(self.runtime, propName);
+
+          if (value.isObject()) {
+            auto wasmValue = static_cast<const ReactNativeWasm::Runtime::WasmObjectValue *>(
+              ReactNativeWasm::Runtime::getPublicPointerValue(value));
+
+            if (wasmValue->isFunction) {
+              auto methodLookup = self.methods.find(propertyName);
+
+              if (methodLookup == self.methods.end()) {
+                self.methods.insert({propertyName, wasmValue->func});
+                ReactNativeWasm::JavascriptAccessor::registerObjectFunction(jsThis.as_handle(), propertyName.c_str());
+              }
+            }
+          }
+
+          return self.runtime.toEmscriptenVal(jsThis, value);
+        }));
 
   emscripten::class_<ReactNativeWasm::Runtime>("Runtime")
     .smart_ptr<std::shared_ptr<ReactNativeWasm::Runtime>>("Runtime")
