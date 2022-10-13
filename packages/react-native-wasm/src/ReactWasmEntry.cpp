@@ -56,9 +56,14 @@ using TurboModuleCache = std::unordered_map<std::string, std::shared_ptr<faceboo
 
 std::shared_ptr<facebook::react::Instance> reactInstance;
 std::shared_ptr<ReactNativeWasm::NativeQueue> nativeQueue;
+
 std::shared_ptr<facebook::react::Scheduler> reactScheduler;
+std::shared_ptr<facebook::react::RuntimeScheduler> runtimeScheduler;
+
 std::shared_ptr<ReactNativeWasm::UIManagerAnimationDelegate> uiManagerAnimationDelegate;
 std::shared_ptr<ReactNativeWasm::SchedulerDelegate> schedulerDelegate;
+facebook::react::ContextContainer::Shared contextContainer;
+std::shared_ptr<facebook::react::ComponentDescriptorProviderRegistry> componentsRegistry;
 
 std::shared_ptr<SharedReactNativeWasmComponentManagers> componentManagers;
 
@@ -147,7 +152,7 @@ void initReactInstance() {
   reactInstance = std::make_shared<facebook::react::Instance>();
 
   auto moduleRegistry =
-    std::make_shared<facebook::react::ModuleRegistry>(std::move(getNativeModules(reactInstance, nativeQueue)));
+    std::make_shared<facebook::react::ModuleRegistry>(getNativeModules(reactInstance, nativeQueue));
 
   reactInstance->initializeBridge(
     std::make_unique<InstanceCallback>(), std::make_shared<ReactNativeWasm::JSWasmExecutorFactory>(), nativeQueue,
@@ -164,7 +169,7 @@ void initReactScheduler() {
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::VirtualTextManager>(renderer));
   componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>(renderer));
 
-  facebook::react::ContextContainer::Shared contextContainer = std::make_shared<facebook::react::ContextContainer>();
+  contextContainer = std::make_shared<facebook::react::ContextContainer>();
 
   folly::dynamic configStore = folly::dynamic::object();
 
@@ -175,8 +180,7 @@ void initReactScheduler() {
     std::make_shared<const ReactNativeWasm::ReactNativeConfig>(configStore);
   contextContainer->insert("ReactNativeConfig", config);
 
-  auto runtimeExecutor = reactInstance->getRuntimeExecutor();
-  auto runtimeScheduler = std::make_shared<facebook::react::RuntimeScheduler>(runtimeExecutor);
+  runtimeScheduler = std::make_shared<facebook::react::RuntimeScheduler>(reactInstance->getRuntimeExecutor());
 
   contextContainer->insert("RuntimeScheduler", std::weak_ptr<facebook::react::RuntimeScheduler>(runtimeScheduler));
 
@@ -190,11 +194,11 @@ void initReactScheduler() {
     return std::make_unique<facebook::react::EventBeat>(ownerBox);
   };
 
-  auto componentsRegistry = createComponentsRegistry();
+  componentsRegistry = createComponentsRegistry();
 
   auto toolbox = facebook::react::SchedulerToolbox{};
   toolbox.contextContainer = contextContainer;
-  toolbox.componentRegistryFactory = [componentsRegistry](
+  toolbox.componentRegistryFactory = [](
                                        facebook::react::EventDispatcher::Weak const &eventDispatcher,
                                        facebook::react::ContextContainer::Shared const &contextContainer)
     -> facebook::react::ComponentDescriptorRegistry::Shared {
@@ -211,7 +215,7 @@ void initReactScheduler() {
     */
     return registry;
   };
-  toolbox.runtimeExecutor = runtimeExecutor;
+  toolbox.runtimeExecutor = reactInstance->getRuntimeExecutor();
   toolbox.synchronousEventBeatFactory = synchronousBeatFactory;
   toolbox.asynchronousEventBeatFactory = asynchronousBeatFactory;
 
@@ -219,7 +223,7 @@ void initReactScheduler() {
   toolbox.backgroundExecutor = [](std::function<void()> &&callback) { nativeQueue->runOnQueue(std::move(callback)); };
 
   reactScheduler =
-    std::make_shared<facebook::react::Scheduler>(toolbox, uiManagerAnimationDelegate.get(), schedulerDelegate.get());
+    std::make_shared<facebook::react::Scheduler>(std::move(toolbox), uiManagerAnimationDelegate.get(), schedulerDelegate.get());
 }
 
 void installTurboModulesBindings() {
