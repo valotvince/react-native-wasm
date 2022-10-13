@@ -37,10 +37,22 @@ const getDoubleConversion = (reactNativeWasmDir) => {
 const getFolly = (reactNativeWasmDir) => {
   const follyDir = path.join(reactNativeWasmDir, 'deps', 'folly');
 
+  const getFilesFromFollyDir = getFilesFromRootDir(follyDir);
+
+  /**
+   *
+   */
+
   return {
     name: 'lib-folly',
     compilerFlags: ['-pthread'],
-    definitions: ['FOLLY_NO_CONFIG', 'FOLLY_HAVE_PTHREAD=1', 'FOLLY_HAVE_PTHREAD_ATFORK=1'],
+    definitions: [
+      'FOLLY_NO_CONFIG',
+      'FOLLY_HAVE_PTHREAD=1',
+      'FOLLY_HAVE_PTHREAD_ATFORK=1',
+      'FOLLY_MOBILE=0',
+      'FOLLY_USE_LIBCPP=1',
+    ],
     includes: [
       '/usr/local/opt/glog/include',
       '/usr/local/opt/boost/include',
@@ -55,29 +67,32 @@ const getFolly = (reactNativeWasmDir) => {
       ...[
         'SharedMutex.cpp',
         'concurrency/CacheLocality.cpp',
-        'detail/Futex.cpp',
-        'lang/SafeAssert.cpp',
-        'lang/ToAscii.cpp',
-        'lang/Assume.cpp',
-        'synchronization/ParkingLot.cpp',
-        'system/ThreadName.cpp',
-        'json.cpp',
-        'Unicode.cpp',
+        'String.cpp',
         'Conv.cpp',
         'Demangle.cpp',
-        'memory/detail/MallocImpl.cpp',
-        'String.cpp',
-        'dynamic.cpp',
         'FileUtil.cpp',
         'Format.cpp',
-        'net/NetOps.cpp',
-        'json_pointer.cpp',
+        'lang/Assume.cpp',
         'lang/CString.cpp',
+        'lang/Exception.cpp',
+        'lang/SafeAssert.cpp',
+        'lang/ToAscii.cpp',
+        'ScopeGuard.cpp',
+        'Unicode.cpp',
+        'dynamic.cpp',
+        'json.cpp',
+        'json_pointer.cpp',
+        'container/detail/F14Table.cpp',
+        'detail/Futex.cpp',
         'detail/UniqueInstance.cpp',
         'hash/SpookyHashV2.cpp',
-        'container/detail/F14Table.cpp',
-        'ScopeGuard.cpp',
+        'memory/detail/MallocImpl.cpp',
+        'net/NetOps.cpp',
         'portability/SysUio.cpp',
+        'portability/SysResource.cpp',
+        'portability/Unistd.cpp',
+        'synchronization/ParkingLot.cpp',
+        'synchronization/SanitizeThread.cpp',
       ].map((file) => path.join(follyDir, file)),
     ],
   };
