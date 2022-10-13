@@ -389,10 +389,14 @@ Array Runtime::getPropertyNames(const Object &object) {
 
   throw std::logic_error("Not implemented");
 };
-WeakObject Runtime::createWeakObject(const Object &) {
+
+// TODO Create a real weak object
+WeakObject Runtime::createWeakObject(const Object &object) {
   std::cout << "Runtime::createWeakObject" << std::endl;
 
-  throw std::logic_error("Not implemWented");
+  auto pv = getPointerValue(object);
+
+  return make<facebook::jsi::WeakObject>(cloneObject(pv));
 };
 Array Runtime::createArray(size_t length) {
   std::cout << "Runtime::createArray" << std::endl;
