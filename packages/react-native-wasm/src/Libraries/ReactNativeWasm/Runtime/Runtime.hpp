@@ -93,7 +93,7 @@ public:
   static const PointerValue *getPublicPointerValue(const Pointer &pointer);
   static const PointerValue *getPublicPointerValue(const Value &value);
 
-  emscripten::val toEmscriptenVal(const Value &value);
+  emscripten::val toEmscriptenVal(const emscripten::val jsThis, const Value &value);
   Value toValue(emscripten::val val, std::string name = "");
   emscripten::val invokeHostFunction(HostFunctionType func, emscripten::val jsonArgs);
 
@@ -103,11 +103,13 @@ public:
 
     ReactNativeWasm::Runtime &runtime;
     std::shared_ptr<facebook::jsi::HostObject> ho;
+
+    std::map<std::string, HostFunctionType> methods;
   };
 
   class WasmObjectValue final : public PointerValue {
   public:
-    WasmObjectValue(Runtime *runtime, HostFunctionType func) : func(func), isFunction(true), isHostObjectProxy(false){};
+    WasmObjectValue(Runtime *runtime, HostFunctionType func, const std::string name) : func(func), name(name), isFunction(true), isHostObjectProxy(false){};
     WasmObjectValue(Runtime *runtime, emscripten::val data) : data(data), isFunction(false), isHostObjectProxy(false){};
     WasmObjectValue(Runtime *runtime, emscripten::val data, const std::string name)
       : data(data), name(name), isFunction(false), isHostObjectProxy(false){};

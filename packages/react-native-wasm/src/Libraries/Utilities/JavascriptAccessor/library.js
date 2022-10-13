@@ -58,6 +58,21 @@ mergeInto(LibraryManager.library, {
     window[decodedName] = createHostObjectProxy(logPrefix, nativeObject);
   },
 
+  registerObjectFunction__proxy: 'sync',
+  registerObjectFunction: function (targetHandle, utf8Name) {
+    const name = UTF8ToString(utf8Name);
+
+    const target = Emval.toValue(targetHandle);
+
+    console.log(`[registerObjectFunction]`, targetHandle, target, name);
+
+    target[name] = (...args) => {
+      return target.runFunction(target, name, args);
+    }
+
+    console.log({target})
+  },
+
   setGlobalVariableFunction__proxy: 'sync',
   setGlobalVariableFunction: function (name) {
     const decodedName = UTF8ToString(name);
