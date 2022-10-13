@@ -16,6 +16,9 @@
 #include <folly/dynamic.h>
 #include <react/config/ReactNativeConfig.h>
 #include <react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h>
+#include <react/renderer/components/text/RawTextComponentDescriptor.h>
+#include <react/renderer/components/text/TextComponentDescriptor.h>
+#include <react/renderer/components/text/ParagraphComponentDescriptor.h>
 #include <react/renderer/components/view/ViewComponentDescriptor.h>
 #include <react/renderer/core/EventBeat.h>
 #include <react/renderer/core/LayoutConstraints.h>
@@ -138,21 +141,24 @@ struct InstanceCallback : public facebook::react::InstanceCallback {
   void decrementPendingJSCalls() override {}
 };
 
-auto createComponentsRegistry() -> std::shared_ptr<facebook::react::ComponentDescriptorProviderRegistry> {
-  auto providerRegistry = std::make_shared<facebook::react::ComponentDescriptorProviderRegistry>();
+void createComponentsRegistry() {
+  componentsRegistry = std::make_shared<facebook::react::ComponentDescriptorProviderRegistry>();
 
-  providerRegistry->add(
+  componentsRegistry->add(
+    facebook::react::concreteComponentDescriptorProvider<facebook::react::RawTextComponentDescriptor>());
+  componentsRegistry->add(
+    facebook::react::concreteComponentDescriptorProvider<facebook::react::TextComponentDescriptor>());
+  componentsRegistry->add(
     facebook::react::concreteComponentDescriptorProvider<facebook::react::ViewComponentDescriptor>());
-
-  return providerRegistry;
+  componentsRegistry->add(
+    facebook::react::concreteComponentDescriptorProvider<facebook::react::ParagraphComponentDescriptor>());
 }
 
 void initReactInstance() {
   nativeQueue = std::make_shared<ReactNativeWasm::NativeQueue>();
   reactInstance = std::make_shared<facebook::react::Instance>();
 
-  auto moduleRegistry =
-    std::make_shared<facebook::react::ModuleRegistry>(getNativeModules(reactInstance, nativeQueue));
+  auto moduleRegistry = std::make_shared<facebook::react::ModuleRegistry>(getNativeModules(reactInstance, nativeQueue));
 
   reactInstance->initializeBridge(
     std::make_unique<InstanceCallback>(), std::make_shared<ReactNativeWasm::JSWasmExecutorFactory>(), nativeQueue,
@@ -194,7 +200,7 @@ void initReactScheduler() {
     return std::make_unique<facebook::react::EventBeat>(ownerBox);
   };
 
-  componentsRegistry = createComponentsRegistry();
+  createComponentsRegistry();
 
   auto toolbox = facebook::react::SchedulerToolbox{};
   toolbox.contextContainer = contextContainer;
@@ -222,8 +228,8 @@ void initReactScheduler() {
   // backgroundExecutor_ = JBackgroundExecutor::create("fabric_bg");
   toolbox.backgroundExecutor = [](std::function<void()> &&callback) { nativeQueue->runOnQueue(std::move(callback)); };
 
-  reactScheduler =
-    std::make_shared<facebook::react::Scheduler>(std::move(toolbox), uiManagerAnimationDelegate.get(), schedulerDelegate.get());
+  reactScheduler = std::make_shared<facebook::react::Scheduler>(
+    std::move(toolbox), uiManagerAnimationDelegate.get(), schedulerDelegate.get());
 }
 
 void installTurboModulesBindings() {

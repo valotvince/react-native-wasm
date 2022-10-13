@@ -64,9 +64,11 @@ mergeInto(LibraryManager.library, {
 
     const target = Emval.toValue(targetHandle);
 
-    console.log(`[registerObjectFunction]`, targetHandle, target, name);
+    console.log(`[registerObjectFunction]`, target, name);
 
     target[name] = (...args) => {
+      console.log(`[registerObjectFunction]`, target, name, args);
+
       return target.runFunction(target, name, args);
     }
 

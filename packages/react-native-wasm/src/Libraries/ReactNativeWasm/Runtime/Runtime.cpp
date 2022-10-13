@@ -144,19 +144,19 @@ Object Runtime::createObject() {
   return make<Object>(new WasmObjectValue(this, std::move(val)));
 };
 Object Runtime::createObject(std::shared_ptr<HostObject> ho) {
-  std::cout << "Runtime::createObject 2" << std::endl;
-
   auto proxy = std::make_shared<ReactNativeWasm::Runtime::HostObjectProxy>(*this, ho);
 
   return make<Object>(new WasmObjectValue(this, std::move(proxy)));
 };
-std::shared_ptr<HostObject> Runtime::getHostObject(const Object &) {
-  std::cout << "Runtime::getHostObject" << std::endl;
-  throw std::logic_error("Not implemented");
+std::shared_ptr<HostObject> Runtime::getHostObject(const Object &object) {
+  auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
+
+  return decodedObject->hostObjectProxy->ho;
 };
-HostFunctionType &Runtime::getHostFunction(const Function &) {
-  std::cout << "Runtime::getHostFunction" << std::endl;
-  throw std::logic_error("Not implemented");
+HostFunctionType &Runtime::getHostFunction(const Function &object) {
+  auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
+
+  // return decodedObject->func;
 };
 PropNameID Runtime::createPropNameIDFromAscii(const char *str, size_t length) {
   auto val = emscripten::val(str);
@@ -201,11 +201,6 @@ emscripten::val Runtime::toEmscriptenVal(const emscripten::val jsThis, const Val
 
     if (wasmValue->isFunction) {
       // At that point, the function should already have been added to the JavaScript object
-      std::cerr << "Function to Emscripten::val This is not supported for now" << std::endl;
-      // std::cout << "Function " << humanDecodedName << std::endl;
-      // runtimeMethods.insert({humanDecodedName, wasmValue});
-      // ReactNativeWasm::JavascriptAccessor::setGlobalVariableFunction(humanDecodedName.c_str());
-
       return jsThis[wasmValue->name];
     } else if (wasmValue->isHostObjectProxy) {
       return emscripten::val(wasmValue->hostObjectProxy);
@@ -234,6 +229,10 @@ Value Runtime::toValue(emscripten::val val, std::string name) {
 
   if (typeOf == "function") {
     return Value(make<Object>(new WasmObjectValue(this, std::move(val), std::move(name))));
+  }
+
+  if (!val["constructor"].isUndefined() && val["constructor"]["name"] == emscripten::val("HostObjectProxy")) {
+    return Value(make<Object>(new WasmObjectValue(this, val.as<std::shared_ptr<ReactNativeWasm::Runtime::HostObjectProxy>>())));
   }
 
   return Value(make<Object>(new WasmObjectValue(this, std::move(val))));
@@ -376,6 +375,9 @@ bool Runtime::isHostObject(const Object &object) const {
 
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
+
+  std::cout << "Runtime::isHostObject" << decodedObject->isHostObjectProxy << decodedObject->isFunction << std::endl;
+
   return decodedObject->isHostObjectProxy;
 };
 bool Runtime::isHostFunction(const Function &) const {
@@ -383,11 +385,14 @@ bool Runtime::isHostFunction(const Function &) const {
   throw std::logic_error("Not implemented");
 };
 Array Runtime::getPropertyNames(const Object &object) {
-  std::cout << "Runtime::getPropertyNames" << std::endl;
-
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  throw std::logic_error("Not implemented");
+  auto globalObject = emscripten::val::global("Object");
+
+  auto properties = globalObject.call<emscripten::val>("keys", decodedObject->data);
+  auto propertiesObject = make<Object>(new WasmObjectValue(this, properties));
+
+  return propertiesObject.getArray(*this);
 };
 
 // TODO Create a real weak object
@@ -515,19 +520,9 @@ emscripten::val Runtime::invokeHostFunction(HostFunctionType func, emscripten::v
 
   auto thisVal = Value();
 
-  try {
-    if (!func) {
-      std::cerr << "Func is not defined" << std::endl;
-      throw std::logic_error("Func is not defined");
-    }
-    auto result = func(*this, std::move(thisVal), args, size);
+  auto result = func(*this, std::move(thisVal), args, size);
 
-    return toEmscriptenVal(emscripten::val::undefined(), result);
-  } catch (std::exception error) {
-    std::cerr << error.what() << std::endl;
-
-    throw error;
-  }
+  return toEmscriptenVal(emscripten::val::undefined(), result);
 }
 
 emscripten::val Runtime::invoke(std::string methodName, emscripten::val jsonArgs) {
@@ -555,6 +550,7 @@ const facebook::jsi::Runtime::PointerValue *Runtime::getPublicPointerValue(const
 } // namespace ReactNativeWasm
 
 EMSCRIPTEN_BINDINGS(ReactWasmRuntime) {
+  // Might be really enhanced with https://github.com/emscripten-core/emscripten/issues/7025#issuecomment-671055909
   emscripten::class_<ReactNativeWasm::Runtime::HostObjectProxy>("HostObjectProxy")
     .smart_ptr<std::shared_ptr<ReactNativeWasm::Runtime::HostObjectProxy>>("HostObjectProxy")
     .function(
@@ -577,12 +573,6 @@ EMSCRIPTEN_BINDINGS(ReactWasmRuntime) {
 
           auto wasmValue = static_cast<const ReactNativeWasm::Runtime::WasmObjectValue *>(
             ReactNativeWasm::Runtime::getPublicPointerValue(value));
-
-          if (!wasmValue->isFunction) {
-            std::cerr << "Property is not a function" << std::endl;
-
-            throw new std::invalid_argument("Property is not a function");
-          }
 
           func = wasmValue->func;
         }

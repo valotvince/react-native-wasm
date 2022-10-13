@@ -103,6 +103,7 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
   const reactNativeCxxReactPath = path.join(reactNativeReactCommonDir, 'cxxreact');
 
   const getFilesFromReactCommonDir = getFilesFromRootDir(reactNativeReactCommonDir);
+  const getFilesFromWasmReactCommonDir = getFilesFromRootDir(path.join(reactNativeWasmDir, 'src', 'ReactCommon'));
 
   return {
     name: 'lib-reactnative',
@@ -115,6 +116,7 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
       '/usr/local/opt/fmt/include',
       '/usr/local/opt/double-conversion/include',
       path.join(reactNativeWasmDir, 'deps'),
+      path.join(reactNativeWasmDir, 'src', 'ReactCommon'),
       path.join(reactNativeDir, 'ReactCommon'),
       ...[
         'react/renderer/graphics/platform/cxx',
@@ -129,10 +131,15 @@ const getReactNative = (reactNativeWasmDir, reactNativeDir) => {
       ].map((file) => path.join(reactNativeReactCommonDir, file)),
     ],
     sources: [
+      ...getFilesFromWasmReactCommonDir('react/renderer/textlayoutmanager'),
+
       ...getFilesFromReactCommonDir('react/nativemodule/core/ReactCommon'),
       ...getFilesFromReactCommonDir('react/renderer/components/view'),
+      ...getFilesFromReactCommonDir('react/renderer/components/text'),
       ...getFilesFromReactCommonDir('react/renderer/components/root'),
+      ...getFilesFromReactCommonDir('react/renderer/attributedstring'),
       ...getFilesFromReactCommonDir('react/renderer/uimanager'),
+      ...getFilesFromReactCommonDir('react/renderer/textlayoutmanager'),
       ...getFilesFromReactCommonDir('react/renderer/componentregistry'),
       ...getFilesFromReactCommonDir('react/renderer/mounting'),
       ...getFilesFromReactCommonDir('react/renderer/leakchecker'),
@@ -185,6 +192,7 @@ const getReactNativeWasm = (reactNativeWasmDir, reactNativeDir) => {
       '/usr/local/opt/fmt/include',
       '/usr/local/opt/double-conversion/include',
       path.join(reactNativeWasmDir, 'deps'),
+      path.join(reactNativeWasmDir, 'src', 'ReactCommon'),
       path.join(reactNativeDir, 'ReactCommon'),
       ...[
         'react/renderer/graphics/platform/cxx',
