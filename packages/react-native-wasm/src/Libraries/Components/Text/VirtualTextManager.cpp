@@ -3,7 +3,6 @@
 #include <iostream>
 
 namespace ReactNativeWasm::Components {
-void VirtualTextShadowNode::createView(folly::dynamic props) {}
 
 const char *VirtualTextManager::Name = "RCTVirtualText";
 
@@ -17,13 +16,5 @@ folly::dynamic VirtualTextManager::getConstants() {
   constants.insert("NativeProps", std::move(nativeProps));
 
   return constants;
-}
-
-ShadowNode *VirtualTextManager::createShadow() {
-  auto node = new VirtualTextShadowNode();
-
-  nodes->push_back(node);
-
-  return node;
 }
 } // namespace ReactNativeWasm::Components

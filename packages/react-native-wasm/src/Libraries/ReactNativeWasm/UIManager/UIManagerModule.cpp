@@ -55,23 +55,6 @@ auto UIManagerModule::getMethods() -> std::vector<Method> {
 
         std::cout << "UIManagerModule::createView reactTag:" << std::to_string(reactTag) << " viewName:" << viewName
                   << " rootTag:" << std::to_string(rootTag) << " props:" << folly::toJson(props).c_str() << std::endl;
-
-        auto viewManager = this->getManager(viewName);
-
-        auto node = viewManager->createShadow();
-        node->className = std::move(viewName);
-        node->tag = reactTag;
-        node->rootTag = rootTag;
-        // node->viewManager = viewManager;
-
-        node->createView(std::move(props));
-
-        this->renderer->render(node);
-
-        std::cout << "UIManagerModule::UIManagerModule nodes size 2 " << std::endl;
-        std::cout << std::to_string(this->nodes->size()) << std::endl;
-
-        this->nodes->insert(std::make_pair(reactTag, node));
       }),
     Method(
       "manageChildren",
@@ -99,14 +82,6 @@ auto UIManagerModule::getMethods() -> std::vector<Method> {
         auto props = facebook::xplat::jsArgAsDynamic(args, 2);
 
         std::cout << "UIManagerModule::updateView " << folly::toJson(args) << std::endl;
-
-        auto node = this->nodes->find(reactTag);
-
-        if (node != this->nodes->end()) {
-          node->second->getView()->props = std::move(props);
-
-          this->renderer->render(node->second);
-        }
       }),
     Method("focus", [this](folly::dynamic args) { auto reactTag = facebook::xplat::jsArgAsInt(args, 0); }),
     Method("blur", [this](folly::dynamic args) { auto reactTag = facebook::xplat::jsArgAsInt(args, 0); }),

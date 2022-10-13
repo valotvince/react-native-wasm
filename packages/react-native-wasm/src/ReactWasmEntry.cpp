@@ -84,7 +84,7 @@ UniqueCxxNativeModuleMap getCxxNativeModules() {
   modules.insert({"DevSettings", []() { return std::make_unique<ReactNativeWasm::DevSettings>(); }});
   modules.insert({"UIManager", []() {
                     return std::make_unique<ReactNativeWasm::UIManagerModule>(
-                      reactScheduler->getUIManager(), componentManagers, renderer);
+                      reactScheduler->getUIManager(), componentManagers);
                   }});
   modules.insert({"Timing", []() { return std::make_unique<ReactNativeWasm::Timing>(); }});
   modules.insert({"DeviceInfo", []() { return std::make_unique<ReactNativeWasm::DeviceInfo>(); }});
@@ -118,7 +118,7 @@ UniqueNativeModuleVector getNativeModules(
     instance, "UIManager",
     []() {
       return std::make_unique<ReactNativeWasm::UIManagerModule>(
-        reactScheduler->getUIManager(), componentManagers, renderer);
+        reactScheduler->getUIManager(), componentManagers);
     },
     nativeQueue));
 
@@ -167,13 +167,13 @@ void initReactInstance() {
 
 void initReactScheduler() {
   uiManagerAnimationDelegate = std::make_shared<ReactNativeWasm::UIManagerAnimationDelegate>();
-  schedulerDelegate = std::make_shared<ReactNativeWasm::SchedulerDelegate>();
+  schedulerDelegate = std::make_shared<ReactNativeWasm::SchedulerDelegate>(renderer);
 
   componentManagers = std::make_shared<SharedReactNativeWasmComponentManagers>();
-  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::ViewManager>(renderer));
-  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::RawTextManager>(renderer));
-  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::VirtualTextManager>(renderer));
-  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>(renderer));
+  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::ViewManager>());
+  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::RawTextManager>());
+  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::VirtualTextManager>());
+  componentManagers->push_back(std::make_shared<ReactNativeWasm::Components::TextManager>());
 
   contextContainer = std::make_shared<facebook::react::ContextContainer>();
 

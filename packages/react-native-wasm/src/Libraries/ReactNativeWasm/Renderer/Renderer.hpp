@@ -4,14 +4,14 @@
 #include <SDL2/SDL_ttf.h>
 #include <mutex>
 
-#include "../../Components/ShadowNode.hpp"
+#include <react/renderer/mounting/ShadowView.h>
 
 namespace ReactNativeWasm {
 class Renderer {
 public:
   Renderer();
 
-  void render(ReactNativeWasm::Components::ShadowNode *);
+  void render(const facebook::react::ShadowView &);
   void flush();
 
 private:
@@ -20,7 +20,7 @@ private:
 
   std::mutex renderMutex = std::mutex();
 
-  void renderText(ReactNativeWasm::Components::ShadowNode *);
-  void renderView(ReactNativeWasm::Components::ShadowNode *);
+  void renderText(const facebook::react::ShadowView &);
+  void renderView(const facebook::react::ShadowView &);
 };
 } // namespace ReactNativeWasm

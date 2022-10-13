@@ -72,17 +72,17 @@ module.exports = async ({ debug, appDir, reactNativeWasmDir, reactNativeDir }) =
     { cwd: reactNativeWasmDir },
   );
 
-  // await spawnPromise('react-native', [
-  //   'bundle',
-  //   '--config',
-  //   path.join(reactNativeWasmDir, 'metro.config.js'),
-  //   '--platform',
-  //   'wasm',
-  //   '--entry-file',
-  //   path.join(appDir, 'index.tsx'),
-  //   '--dev',
-  //   'true',
-  //   '--bundle-output',
-  //   path.resolve(path.join(reactNativeWasmDir, 'dist', 'react-native.bundle.js')),
-  // ]);
+  await spawnPromise('react-native', [
+    'bundle',
+    '--config',
+    path.join(reactNativeWasmDir, 'metro.config.js'),
+    '--platform',
+    'wasm',
+    '--entry-file',
+    path.join(appDir, 'index.tsx'),
+    '--dev',
+    'true',
+    '--bundle-output',
+    path.resolve(path.join(reactNativeWasmDir, 'dist', 'react-native.bundle.js')),
+  ]);
 };

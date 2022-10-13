@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../Components/ComponentManager.hpp"
-#include "../../Components/ShadowNode.hpp"
 #include <cxxreact/CxxModule.h>
 #include <folly/dynamic.h>
 #include <map>
@@ -14,11 +13,9 @@ class UIManagerModule : public facebook::xplat::module::CxxModule {
 public:
   UIManagerModule(
     std::shared_ptr<facebook::react::UIManager> uiManager,
-    std::shared_ptr<std::vector<std::shared_ptr<ReactNativeWasm::Components::Manager>>> componentManagers,
-    std::shared_ptr<ReactNativeWasm::Renderer> renderer)
-    : uiManager(uiManager), componentManagers(componentManagers), renderer(renderer) {
+    std::shared_ptr<std::vector<std::shared_ptr<ReactNativeWasm::Components::Manager>>> componentManagers)
+    : uiManager(uiManager), componentManagers(componentManagers) {
     std::cout << "UIManagerModule constructor" << std::endl;
-    nodes = std::make_unique<std::map<int64_t, ReactNativeWasm::Components::ShadowNode *>>();
   };
 
   std::string getName();
@@ -30,8 +27,6 @@ public:
 private:
   std::shared_ptr<facebook::react::UIManager> uiManager;
   std::shared_ptr<std::vector<std::shared_ptr<ReactNativeWasm::Components::Manager>>> componentManagers;
-  std::shared_ptr<ReactNativeWasm::Renderer> renderer;
-  std::unique_ptr<std::map<int64_t, ReactNativeWasm::Components::ShadowNode *>> nodes;
 
   auto getManager(std::string) -> std::shared_ptr<ReactNativeWasm::Components::Manager>;
 };

@@ -1,7 +1,10 @@
 #include "SchedulerDelegate.hpp"
 
 #include <react/renderer/mounting/MountingTransaction.h>
+#include <react/renderer/mounting/ShadowViewMutation.h>
 #include <react/renderer/telemetry/SurfaceTelemetry.h>
+#include <iostream>
+
 
 namespace ReactNativeWasm {
 /*
@@ -19,18 +22,76 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
     [&](
       facebook::react::MountingTransaction const &transaction,
       facebook::react::SurfaceTelemetry const &surfaceTelemetry) {
+      std::cout << "SchedulerDelegate::schedulerDidFinishTransaction pullTransaction willMount" << std::endl;
+
       //[self.delegate mountingManager:self willMountComponentsWithRootTag:surfaceId];
       // _observerCoordinator.notifyObserversMountingTransactionWillMount(transaction, surfaceTelemetry);
     },
     [&](
       facebook::react::MountingTransaction const &transaction,
       facebook::react::SurfaceTelemetry const &surfaceTelemetry) {
+      std::cout << "SchedulerDelegate::schedulerDidFinishTransaction pullTransaction mount" << std::endl;
+
+      auto mutations = transaction.getMutations();
+
+      for (auto const &mutation : mutations) {
+        const auto &parentShadowView = mutation.parentShadowView;
+        const auto &oldChildShadowView = mutation.oldChildShadowView;
+        const auto &newChildShadowView = mutation.newChildShadowView;
+
+        switch (mutation.type) {
+          case facebook::react::ShadowViewMutation::Create: {
+            std::cout << "facebook::react::ShadowViewMutation::Create " << newChildShadowView.componentName << std::endl;
+
+            auto contentFrame = newChildShadowView.layoutMetrics.getContentFrame();
+
+            std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
+            break;
+          }
+
+          case facebook::react::ShadowViewMutation::Delete: {
+          std::cout << "facebook::react::ShadowViewMutation::Delete" << std::endl;
+            auto contentFrame = newChildShadowView.layoutMetrics.getContentFrame();
+
+            std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
+            break;
+          }
+
+          case facebook::react::ShadowViewMutation::Insert: {
+          std::cout << "facebook::react::ShadowViewMutation::Insert " << newChildShadowView.componentName << std::endl;
+
+            renderer->render(newChildShadowView);
+            break;
+          }
+
+          case facebook::react::ShadowViewMutation::Remove: {
+          std::cout << "facebook::react::ShadowViewMutation::Remove" << std::endl;
+            break;
+          }
+
+          case facebook::react::ShadowViewMutation::RemoveDeleteTree: {
+          std::cout << "facebook::react::ShadowViewMutation::RemoveDeleteTree" << std::endl;
+            break;
+          }
+
+          case facebook::react::ShadowViewMutation::Update: {
+          std::cout << "facebook::react::ShadowViewMutation::Update " << newChildShadowView.componentName << std::endl;
+            auto contentFrame = newChildShadowView.layoutMetrics.getContentFrame();
+
+            std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
+            break;
+          }
+        }
+      }
+
       // RCTPerformMountInstructions(
       //     transaction.getMutations(), /* _componentViewRegistry, _observerCoordinator,*/ surfaceId);
     },
     [&](
       facebook::react::MountingTransaction const &transaction,
       facebook::react::SurfaceTelemetry const &surfaceTelemetry) {
+      std::cout << "SchedulerDelegate::schedulerDidFinishTransaction pullTransaction didMount" << std::endl;
+
       //_observerCoordinator.notifyObserversMountingTransactionDidMount(transaction, surfaceTelemetry);
       // didMountComponentsWithRootTag(surfaceId);
       //[self.delegate mountingManager:self didMountComponentsWithRootTag:surfaceId];

@@ -52,12 +52,12 @@ void Renderer::flush() {
   std::cout << "FLUSH" << std::endl;
 }
 
-void Renderer::renderText(ReactNativeWasm::Components::ShadowNode *textNode) {
+void Renderer::renderText(const facebook::react::ShadowView &view) {
   std::lock_guard<std::mutex> guard(renderMutex);
 
-  auto view = textNode->getView();
+  auto contentFrame = view.layoutMetrics.getContentFrame();
 
-  std::cout << "textNode Props " << folly::toJson(view->props) << std::endl;
+  // std::cout << "textNode Props " << folly::toJson(view->props) << std::endl;
 
   int fontSize = 24;
 
@@ -69,7 +69,7 @@ void Renderer::renderText(ReactNativeWasm::Components::ShadowNode *textNode) {
   // // and it will be your text's color
   SDL_Color White = {255, 255, 255};
 
-  auto text = view->props.at("text");
+  std::string text = "TEXT TO CHANGE";
 
   // // as TTF_RenderText_Solid could only be used on
   // // SDL_Surface then you have to create the surface first
@@ -79,8 +79,8 @@ void Renderer::renderText(ReactNativeWasm::Components::ShadowNode *textNode) {
   SDL_Texture *Message = MAIN_SDL_CreateTextureFromSurface(renderer, surfaceMessage);
 
   SDL_FRect Message_rect;                  // create a rect
-  Message_rect.x = 0;                      // controls the rect's x coordinate
-  Message_rect.y = 0;                      // controls the rect's y coordinte
+  Message_rect.x = contentFrame.origin.x;                      // controls the rect's x coordinate
+  Message_rect.y = contentFrame.origin.y;                      // controls the rect's y coordinte
   Message_rect.w = fontSize * text.size(); // controls the width of the rect
   Message_rect.h = fontSize + 2;           // controls the height of the rect
 
@@ -102,22 +102,26 @@ void Renderer::renderText(ReactNativeWasm::Components::ShadowNode *textNode) {
   MAIN_SDL_DestroyTexture(Message);
 }
 
-void Renderer::renderView(ReactNativeWasm::Components::ShadowNode *node) {
+void Renderer::renderView(const facebook::react::ShadowView &view) {
   std::lock_guard<std::mutex> guard(renderMutex);
+
+  auto contentFrame = view.layoutMetrics.getContentFrame();
 
   // Set a color for drawing matching the earlier `ctx.fillStyle = "green"`.
   SDL_SetRenderDrawColor(renderer, /* RGBA: green */ 0x00, 0x80, 0x80, 0xFF);
 
   // Create and draw a rectangle like in the earlier `ctx.fillRect()`.
-  SDL_Rect rect = {.x = 10, .y = 10, .w = 10, .h = 10};
-  SDL_RenderFillRect(renderer, &rect);
+  SDL_FRect rect = {.x = contentFrame.origin.x, .y = contentFrame.origin.y, .w = contentFrame.size.width, .h = contentFrame.size.height};
+  SDL_RenderFillRectF(renderer, &rect);
 }
 
-void Renderer::render(ReactNativeWasm::Components::ShadowNode *node) {
-  if (node->className == "RCTRawText") {
-    renderText(node);
+void Renderer::render(const facebook::react::ShadowView &view) {
+  std::string componentName(view.componentName);
+
+  if (componentName == "Paragraph") {
+    renderText(view);
   } else {
-    renderView(node);
+    renderView(view);
   }
 }
 } // namespace ReactNativeWasm
