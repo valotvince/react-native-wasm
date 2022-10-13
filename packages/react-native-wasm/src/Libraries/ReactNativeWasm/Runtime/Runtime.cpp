@@ -2,6 +2,7 @@
 #include "../../Utilities/JavascriptAccessor/JavascriptAccessor.hpp"
 #include <emscripten/bind.h>
 #include <emscripten/emscripten.h>
+#include <emscripten/threading.h>
 #include <emscripten/val.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
@@ -232,7 +233,8 @@ Value Runtime::toValue(emscripten::val val, std::string name) {
   }
 
   if (!val["constructor"].isUndefined() && val["constructor"]["name"] == emscripten::val("HostObjectProxy")) {
-    return Value(make<Object>(new WasmObjectValue(this, val.as<std::shared_ptr<ReactNativeWasm::Runtime::HostObjectProxy>>())));
+    return Value(
+      make<Object>(new WasmObjectValue(this, val.as<std::shared_ptr<ReactNativeWasm::Runtime::HostObjectProxy>>())));
   }
 
   return Value(make<Object>(new WasmObjectValue(this, std::move(val))));
@@ -318,15 +320,11 @@ Value Runtime::getProperty(const Object &object, const PropNameID &name) {
   auto decodedName = utf8(name);
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  std::cout << "Runtime::getProperty 1 " << decodedName << std::endl;
-
   return toValue(decodedObject->data[decodedName], decodedName);
 };
 Value Runtime::getProperty(const Object &object, const String &name) {
   auto decodedName = utf8(name);
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
-
-  std::cout << "Runtime::getProperty 2 " << decodedName << std::endl;
 
   return toValue(decodedObject->data[decodedName], decodedName);
 };
@@ -334,17 +332,11 @@ bool Runtime::hasProperty(const Object &object, const PropNameID &name) {
   auto decodedName = utf8(name);
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
-  std::cout << "hasProperty PropNameId " << decodedName << decodedObject->data.hasOwnProperty(decodedName.c_str())
-            << std::endl;
-
   return !decodedObject->data[decodedName.c_str()].isUndefined();
 };
 bool Runtime::hasProperty(const Object &object, const String &name) {
   auto decodedName = utf8(name);
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
-
-  std::cout << "hasProperty String " << decodedName << decodedObject->data.hasOwnProperty(decodedName.c_str())
-            << std::endl;
 
   return !decodedObject->data[decodedName.c_str()].isUndefined();
 };
@@ -371,12 +363,7 @@ bool Runtime::isFunction(const Object &object) const {
   return decodedObject->data.typeOf().as<std::string>() == "function";
 };
 bool Runtime::isHostObject(const Object &object) const {
-  std::cout << "Runtime::isHostObject" << std::endl;
-
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
-
-
-  std::cout << "Runtime::isHostObject" << decodedObject->isHostObjectProxy << decodedObject->isFunction << std::endl;
 
   return decodedObject->isHostObjectProxy;
 };
@@ -404,8 +391,6 @@ WeakObject Runtime::createWeakObject(const Object &object) {
   return make<facebook::jsi::WeakObject>(cloneObject(pv));
 };
 Array Runtime::createArray(size_t length) {
-  std::cout << "Runtime::createArray" << std::endl;
-
   auto array = emscripten::val::array();
 
   auto object = make<Object>(new WasmObjectValue(this, array));
