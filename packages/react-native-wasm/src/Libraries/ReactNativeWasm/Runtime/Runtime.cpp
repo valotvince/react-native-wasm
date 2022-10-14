@@ -21,7 +21,9 @@ namespace ReactNativeWasm {
 
 auto runtimeMethods = std::map<std::string, const void *>();
 
-void Runtime::WasmObjectValue::invalidate() {}
+void Runtime::WasmObjectValue::invalidate() {
+  std::cerr << "Deallocating WasmObjectValue" << std::endl;
+}
 
 Runtime::Runtime() noexcept {
   emscripten::val::global("window").set("WasmRuntime", this);

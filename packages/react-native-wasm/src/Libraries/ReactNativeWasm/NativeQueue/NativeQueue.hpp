@@ -5,15 +5,19 @@
 #include <queue>
 
 namespace ReactNativeWasm {
+using Task = std::function<void()>;
 class NativeQueue : public facebook::react::MessageQueueThread {
 public:
   NativeQueue();
 
-  void runOnQueue(std::function<void()> &&) override;
+  void runOnQueue(Task &&) override;
   // runOnQueueSync and quitSynchronous are dangerous.  They should only be
   // used for initialization and cleanup.
-  void runOnQueueSync(std::function<void()> &&) override;
+  void runOnQueueSync(Task &&) override;
   // Once quitSynchronous() returns, no further work should run on the queue.
   void quitSynchronous() override;
+
+private:
+  Task wrapRunnable(Task &&);
 };
 } // namespace ReactNativeWasm
