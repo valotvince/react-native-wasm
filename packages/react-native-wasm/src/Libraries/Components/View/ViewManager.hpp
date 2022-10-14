@@ -5,7 +5,7 @@
 namespace ReactNativeWasm::Components {
 class ViewManager : public Manager {
 public:
-  ViewManager() {};
+  ViewManager(){};
 
   std::string getName() override;
   folly::dynamic getConstants() override;

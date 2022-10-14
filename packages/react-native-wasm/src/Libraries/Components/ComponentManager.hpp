@@ -6,7 +6,7 @@
 namespace ReactNativeWasm::Components {
 class Manager {
 public:
-  Manager() {};
+  Manager(){};
 
   virtual std::string getName() = 0;
   virtual folly::dynamic getConstants() = 0;

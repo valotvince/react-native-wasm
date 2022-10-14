@@ -117,8 +117,7 @@ UniqueNativeModuleVector getNativeModules(
   modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
     instance, "UIManager",
     []() {
-      return std::make_unique<ReactNativeWasm::UIManagerModule>(
-        reactScheduler->getUIManager(), componentManagers);
+      return std::make_unique<ReactNativeWasm::UIManagerModule>(reactScheduler->getUIManager(), componentManagers);
     },
     nativeQueue));
 
@@ -254,20 +253,14 @@ void installTurboModulesBindings() {
       return nullptr;
     }
 
-    std::cout << "lock acquired" << std::endl;
-
     auto turboModuleLookup = turboModuleCacheLocked->find(name);
     if (turboModuleLookup != turboModuleCacheLocked->end()) {
-      std::cout << "Found Module cached !" << std::endl;
-
       return turboModuleLookup->second;
     }
 
     auto nativeModuleLookup = nativeModulesLocked->find(name);
 
     if (nativeModuleLookup != nativeModulesLocked->end()) {
-      std::cout << "Found Module !" << std::endl;
-
       auto turboModule =
         std::make_shared<facebook::react::TurboCxxModule>(nativeModuleLookup->second(), jsInvokerLocked);
 

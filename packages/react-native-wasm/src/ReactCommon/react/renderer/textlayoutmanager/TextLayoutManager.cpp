@@ -16,12 +16,29 @@ TextMeasurement TextLayoutManager::measure(
   AttributedStringBox attributedStringBox, ParagraphAttributes paragraphAttributes,
   LayoutConstraints layoutConstraints) const {
   TextMeasurement::Attachments attachments;
+
+  float previousX = 0;
+  float previousY = 24;
+
   for (auto const &fragment : attributedStringBox.getValue().getFragments()) {
+    std::cout << "Fragment Attachment " << fragment.isAttachment() << std::endl;
+
+    auto textAttributes = fragment.textAttributes;
+    auto fontSize = textAttributes.fontSize;
+
+    auto textWidth = fragment.string.size() * fontSize;
+
     if (fragment.isAttachment()) {
-      attachments.push_back(TextMeasurement::Attachment{{{0, 0}, {0, 0}}, false});
+      attachments.push_back(TextMeasurement::Attachment{{{previousX, 0}, {textWidth, fontSize}}, false});
     }
+
+    previousX = textWidth * fontSize;
+    previousY = fontSize + 2;
   }
-  return TextMeasurement{{0, 0}, attachments};
+
+  std::cout << "PreviousX " << previousX << " PreviousY " << previousY << std::endl;
+
+  return TextMeasurement{{previousX, previousY}, attachments};
 }
 
 LinesMeasurements TextLayoutManager::measureLines(

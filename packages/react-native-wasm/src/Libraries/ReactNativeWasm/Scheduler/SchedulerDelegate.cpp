@@ -1,10 +1,9 @@
 #include "SchedulerDelegate.hpp"
 
+#include <iostream>
 #include <react/renderer/mounting/MountingTransaction.h>
 #include <react/renderer/mounting/ShadowViewMutation.h>
 #include <react/renderer/telemetry/SurfaceTelemetry.h>
-#include <iostream>
-
 
 namespace ReactNativeWasm {
 /*
@@ -40,47 +39,50 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
         const auto &newChildShadowView = mutation.newChildShadowView;
 
         switch (mutation.type) {
-          case facebook::react::ShadowViewMutation::Create: {
-            std::cout << "facebook::react::ShadowViewMutation::Create " << newChildShadowView.componentName << std::endl;
+        case facebook::react::ShadowViewMutation::Create: {
+          std::cout << "facebook::react::ShadowViewMutation::Create " << newChildShadowView.componentName << std::endl;
 
-            auto contentFrame = newChildShadowView.layoutMetrics.getContentFrame();
+          auto contentFrame = newChildShadowView.layoutMetrics.frame;
 
-            std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
-            break;
-          }
+          std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y
+                    << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
+          break;
+        }
 
-          case facebook::react::ShadowViewMutation::Delete: {
+        case facebook::react::ShadowViewMutation::Delete: {
           std::cout << "facebook::react::ShadowViewMutation::Delete" << std::endl;
-            auto contentFrame = newChildShadowView.layoutMetrics.getContentFrame();
+          auto contentFrame = newChildShadowView.layoutMetrics.frame;
 
-            std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
-            break;
-          }
+          std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y
+                    << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
+          break;
+        }
 
-          case facebook::react::ShadowViewMutation::Insert: {
+        case facebook::react::ShadowViewMutation::Insert: {
           std::cout << "facebook::react::ShadowViewMutation::Insert " << newChildShadowView.componentName << std::endl;
 
-            renderer->render(newChildShadowView);
-            break;
-          }
+          renderer->render(newChildShadowView);
+          break;
+        }
 
-          case facebook::react::ShadowViewMutation::Remove: {
+        case facebook::react::ShadowViewMutation::Remove: {
           std::cout << "facebook::react::ShadowViewMutation::Remove" << std::endl;
-            break;
-          }
+          break;
+        }
 
-          case facebook::react::ShadowViewMutation::RemoveDeleteTree: {
+        case facebook::react::ShadowViewMutation::RemoveDeleteTree: {
           std::cout << "facebook::react::ShadowViewMutation::RemoveDeleteTree" << std::endl;
-            break;
-          }
+          break;
+        }
 
-          case facebook::react::ShadowViewMutation::Update: {
+        case facebook::react::ShadowViewMutation::Update: {
           std::cout << "facebook::react::ShadowViewMutation::Update " << newChildShadowView.componentName << std::endl;
-            auto contentFrame = newChildShadowView.layoutMetrics.getContentFrame();
+          auto contentFrame = newChildShadowView.layoutMetrics.frame;
 
-            std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
-            break;
-          }
+          std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y
+                    << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
+          break;
+        }
         }
       }
 

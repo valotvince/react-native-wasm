@@ -6,7 +6,7 @@ namespace ReactNativeWasm::Components {
 
 class VirtualTextManager : public Manager {
 public:
-  VirtualTextManager() {};
+  VirtualTextManager(){};
 
   std::string getName() override;
   folly::dynamic getConstants() override;

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <react/renderer/scheduler/SchedulerDelegate.h>
 #include "../Renderer/Renderer.hpp"
+#include <react/renderer/scheduler/SchedulerDelegate.h>
 
 namespace ReactNativeWasm {
 
@@ -17,7 +17,7 @@ namespace ReactNativeWasm {
  */
 class SchedulerDelegate : public facebook::react::SchedulerDelegate {
 public:
-  SchedulerDelegate(std::shared_ptr<ReactNativeWasm::Renderer> renderer): renderer(renderer) {};
+  SchedulerDelegate(std::shared_ptr<ReactNativeWasm::Renderer> renderer) : renderer(renderer){};
 
   /*
    * Called right after Scheduler computed (and laid out) a new updated version
