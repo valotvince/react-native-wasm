@@ -21,8 +21,8 @@ namespace ReactNativeWasm {
 
 auto runtimeMethods = std::map<std::string, const void *>();
 
+// TODO: Memory leak
 void Runtime::WasmObjectValue::invalidate() {
-  std::cerr << "Deallocating WasmObjectValue" << std::endl;
 }
 
 Runtime::Runtime() noexcept {

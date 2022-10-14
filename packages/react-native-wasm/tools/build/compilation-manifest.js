@@ -37,12 +37,6 @@ const getDoubleConversion = (reactNativeWasmDir) => {
 const getFolly = (reactNativeWasmDir) => {
   const follyDir = path.join(reactNativeWasmDir, 'deps', 'folly');
 
-  const getFilesFromFollyDir = getFilesFromRootDir(follyDir);
-
-  /**
-   *
-   */
-
   return {
     name: 'lib-folly',
     compilerFlags: ['-pthread'],
@@ -217,11 +211,11 @@ const getReactNativeWasm = (reactNativeWasmDir, reactNativeDir) => {
       ...getFilesFromReactNativeWasmDir('Libraries/Utilities/SourceCode'),
       ...getFilesFromReactNativeWasmDir('Libraries/Utilities/StatusBarManager'),
       ...getFilesFromReactNativeWasmDir('Libraries/Utilities'),
+      ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Renderer/SDL'),
       ...[
         'ReactWasmEntry.cpp',
         'Libraries/ReactNativeWasm/Scheduler/SchedulerDelegate.cpp',
         'Libraries/ReactNativeWasm/NativeQueue/NativeQueue.cpp',
-        'Libraries/ReactNativeWasm/Renderer/Renderer.cpp',
         'Libraries/ReactNativeWasm/Runtime/Runtime.cpp',
         'Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.cpp',
       ].map((file) => path.join(reactNativeWasmDir, 'src', file)),

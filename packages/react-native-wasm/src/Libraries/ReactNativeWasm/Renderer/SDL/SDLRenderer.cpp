@@ -1,7 +1,7 @@
 #include <emscripten/threading.h>
 #include <iostream>
 
-#include "Renderer.hpp"
+#include "SDLRenderer.hpp"
 #include <folly/json.h>
 #include <react/renderer/components/text/ParagraphShadowNode.h>
 #include <react/renderer/graphics/Color.h>
@@ -37,7 +37,7 @@ void MAIN_SDL_RenderPresent(SDL_Renderer *renderer) {
 }
 
 namespace ReactNativeWasm {
-Renderer::Renderer() {
+SDLRenderer::SDLRenderer() {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
 
@@ -45,16 +45,16 @@ Renderer::Renderer() {
   SDL_CreateWindowAndRenderer(300, 300, 0, &window, &renderer);
 }
 
-void Renderer::flush() {
+void SDLRenderer::flush() {
   std::lock_guard<std::mutex> guard(renderMutex);
 
   // SDL_RenderClear(renderer);
   MAIN_SDL_RenderPresent(renderer);
 
-  std::cout << "FLUSH" << std::endl;
+  std::cout << " FLUSH " << std::endl;
 }
 
-void Renderer::renderText(const facebook::react::ShadowView &view) {
+void SDLRenderer::renderText(const facebook::react::ShadowView &view) {
   std::lock_guard<std::mutex> guard(renderMutex);
 
   auto contentFrame = view.layoutMetrics.frame;
@@ -125,7 +125,7 @@ void Renderer::renderText(const facebook::react::ShadowView &view) {
   }
 }
 
-void Renderer::renderView(const facebook::react::ShadowView &view) {
+void SDLRenderer::renderView(const facebook::react::ShadowView &view) {
   std::lock_guard<std::mutex> guard(renderMutex);
 
   const auto &newViewProps = *std::static_pointer_cast<const facebook::react::ViewProps>(view.props);
@@ -154,7 +154,7 @@ void Renderer::renderView(const facebook::react::ShadowView &view) {
   SDL_RenderFillRectF(renderer, &rect);
 }
 
-void Renderer::render(const facebook::react::ShadowView &view) {
+void SDLRenderer::render(const facebook::react::ShadowView &view) {
   std::string componentName(view.componentName);
 
   if (componentName == "Paragraph") {

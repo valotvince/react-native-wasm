@@ -47,6 +47,7 @@
 #include "Libraries/ReactNativeWasm/Config/ReactNativeConfig.hpp"
 #include "Libraries/ReactNativeWasm/NativeQueue/NativeQueue.hpp"
 #include "Libraries/ReactNativeWasm/Renderer/Renderer.hpp"
+#include "Libraries/ReactNativeWasm/Renderer/SDL/SDLRenderer.hpp"
 #include "Libraries/ReactNativeWasm/Scheduler/SchedulerDelegate.hpp"
 #include "Libraries/ReactNativeWasm/UIManager/UIManagerAnimationDelegate.hpp"
 #include "Libraries/ReactNativeWasm/UIManager/UIManagerModule.hpp"
@@ -286,12 +287,10 @@ void run() {
   initReactScheduler();
 
   ReactNativeWasm::JavascriptAccessor::insertScriptTag("react-native.bundle.js");
-
-  std::cout << "After loadBundle" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
-  renderer = std::make_shared<ReactNativeWasm::Renderer>();
+  renderer = std::make_shared<ReactNativeWasm::SDLRenderer>();
 
   run();
 
@@ -301,8 +300,6 @@ int main(int argc, char *argv[]) {
 }
 
 void onBundleLoaded() {
-  std::cout << "Bundle loaded !" << std::endl;
-
   auto surfaceId = 11;
 
   auto layoutContext = facebook::react::LayoutContext{};

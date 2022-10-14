@@ -63,6 +63,7 @@ void NativeQueue::runOnQueue(Task &&func) {
 
   std::lock_guard<std::mutex> guard(tasksMutex);
 
+  // TODO: Memory leak ahead
   tasks.push_back(std::move(wrappedRunnable));
 }
 

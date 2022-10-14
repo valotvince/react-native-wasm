@@ -1,26 +1,13 @@
 #pragma once
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <mutex>
-
 #include <react/renderer/mounting/ShadowView.h>
 
 namespace ReactNativeWasm {
 class Renderer {
 public:
-  Renderer();
+  Renderer() {};
 
-  void render(const facebook::react::ShadowView &);
-  void flush();
-
-private:
-  SDL_Renderer *renderer;
-  SDL_Window *window;
-
-  std::mutex renderMutex = std::mutex();
-
-  void renderText(const facebook::react::ShadowView &);
-  void renderView(const facebook::react::ShadowView &);
+  virtual void render(const facebook::react::ShadowView &) = 0;
+  virtual void flush() = 0;
 };
 } // namespace ReactNativeWasm

@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppRegistry, View, Text, StyleSheet } from 'react-native';
+import { Button } from './src/components/button';
 
 const Demo = () => {
+  const intervalId = useRef();
   const [timer, setTimer] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => {
+    return () => clearInterval(intervalId.current);
+  }, []);
+
+  const startTimer = useCallback(() => {
+    intervalId.current = setInterval(() => {
       setTimer((previousTimer) => previousTimer + 1);
     }, 5000);
+  }, []);
 
-    return () => clearInterval(id);
+  const stopTimer = useCallback(() => {
+    clearInterval(intervalId.current);
   }, []);
 
   return (
@@ -18,15 +26,12 @@ const Demo = () => {
         <Text style={styles.title}>Hello world!</Text>
         <Text style={styles.timer}>Timer: {timer}</Text>
         <View style={styles.boxesContainer}>
-          <View style={[styles.box, { backgroundColor: 'red' }]}></View>
-          <View style={[styles.box, { backgroundColor: 'green' }]}></View>
-          <View style={[styles.box, { backgroundColor: 'blue' }]}></View>
-        </View>
-        <View style={styles.boxesContainer}>
           <View style={[styles.box, { backgroundColor: 'rgba(255, 0, 0, 0.1)' }]}></View>
           <View style={[styles.box, { backgroundColor: 'rgba(0, 255, 0, 0.1)' }]}></View>
           <View style={[styles.box, { backgroundColor: 'rgba(0, 0, 255, 0.1)' }]}></View>
         </View>
+        <Button onPress={startTimer} text="Start Timer" />
+        <Button onPress={stopTimer} text="Stop Timer" />
       </View>
     </View>
   );
