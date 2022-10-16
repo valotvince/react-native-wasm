@@ -86,11 +86,13 @@ module.exports = async (cwd, library) => {
     { cwd: outputDirectory },
   );
 
-  const files = await fs.readdir(outputDirectory);
-
-  await spawnPromise('emar', ['rcs', `${library.name}.a`, ...files.filter((file) => file.endsWith('.o'))], {
-    cwd: outputDirectory,
-  });
+  await spawnPromise(
+    'emar',
+    ['rcs', `${library.name}.a`, ...library.sources.map((file) => getObjectOutputFilePath(outputDirectory, file))],
+    {
+      cwd: outputDirectory,
+    },
+  );
 
   const updatedSources = library.sources.reduce((accumulator, source) => {
     if (fsSync.existsSync(getObjectOutputFilePath(outputDirectory, source))) {

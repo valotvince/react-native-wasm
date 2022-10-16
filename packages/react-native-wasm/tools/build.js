@@ -11,7 +11,6 @@ module.exports = async ({ debug, appDir, reactNativeWasmDir, reactNativeDir }) =
     await buildLibrary(reactNativeWasmDir, library);
   }
 
-  const warnings = ['all'].map((warning) => `-W${warning}`);
   const options = [
     'USE_SDL=2',
     'USE_SDL_TTF=2',
@@ -46,7 +45,7 @@ module.exports = async ({ debug, appDir, reactNativeWasmDir, reactNativeDir }) =
       '-lembind',
       '-pthread',
       ...options,
-      ...warnings,
+      '-Wall',
       // Fast-incremental builds
       '-fexceptions',
       // '-fwasm-exceptions',
