@@ -31,9 +31,6 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
       facebook::react::MountingTransaction const &transaction,
       facebook::react::SurfaceTelemetry const &surfaceTelemetry) {
       std::cout << "SchedulerDelegate::schedulerDidFinishTransaction pullTransaction willMount" << std::endl;
-
-      //[self.delegate mountingManager:self willMountComponentsWithRootTag:surfaceId];
-      // _observerCoordinator.notifyObserversMountingTransactionWillMount(transaction, surfaceTelemetry);
     },
     [&](
       facebook::react::MountingTransaction const &transaction,
@@ -49,22 +46,16 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
 
         switch (mutation.type) {
         case facebook::react::ShadowViewMutation::Create: {
-          std::cout << "facebook::react::ShadowViewMutation::Create " << newChildShadowView.componentName << std::endl;
-
           views.insert({newChildShadowView.tag, std::make_shared<ComponentView>()});
           break;
         }
 
         case facebook::react::ShadowViewMutation::Delete: {
-          std::cout << "facebook::react::ShadowViewMutation::Delete" << std::endl;
           views.erase(oldChildShadowView.tag);
           break;
         }
 
         case facebook::react::ShadowViewMutation::Insert: {
-          std::cout << "facebook::react::ShadowViewMutation::Insert " << newChildShadowView.tag << ":"
-                    << newChildShadowView.componentName << std::endl;
-
           auto parentLookup = views.find(parentShadowView.tag);
           auto childLookup = views.find(newChildShadowView.tag);
 
@@ -74,8 +65,6 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
         }
 
         case facebook::react::ShadowViewMutation::Remove: {
-          std::cout << "facebook::react::ShadowViewMutation::Remove" << std::endl;
-
           auto parentLookup = views.find(parentShadowView.tag);
 
           parentLookup->second->removeChild(oldChildShadowView.tag);
@@ -83,14 +72,10 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
         }
 
         case facebook::react::ShadowViewMutation::RemoveDeleteTree: {
-          std::cout << "facebook::react::ShadowViewMutation::RemoveDeleteTree" << std::endl;
           break;
         }
 
         case facebook::react::ShadowViewMutation::Update: {
-          std::cout << "facebook::react::ShadowViewMutation::Update " << newChildShadowView.tag << ":"
-                    << newChildShadowView.componentName << std::endl;
-
           auto childLookup = views.find(newChildShadowView.tag);
           childLookup->second->update(newChildShadowView);
 
@@ -102,18 +87,11 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
       // TODO Perf: Don't render everything at once, only re-render changes
       auto rootLookup = views.find(11);
       renderer->render(rootLookup->second);
-
-      // RCTPerformMountInstructions(
-      //     transaction.getMutations(), /* _componentViewRegistry, _observerCoordinator,*/ surfaceId);
     },
     [&](
       facebook::react::MountingTransaction const &transaction,
       facebook::react::SurfaceTelemetry const &surfaceTelemetry) {
       std::cout << "SchedulerDelegate::schedulerDidFinishTransaction pullTransaction didMount" << std::endl;
-
-      //_observerCoordinator.notifyObserversMountingTransactionDidMount(transaction, surfaceTelemetry);
-      // didMountComponentsWithRootTag(surfaceId);
-      //[self.delegate mountingManager:self didMountComponentsWithRootTag:surfaceId];
     });
 };
 

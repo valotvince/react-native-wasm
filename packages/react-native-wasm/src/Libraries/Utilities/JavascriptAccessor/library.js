@@ -67,12 +67,16 @@ mergeInto(LibraryManager.library, {
     console.log(`[registerObjectFunction]`, target, name);
 
     target[name] = (...args) => {
-      console.log(`[registerObjectFunction]`, target, name, args);
 
-      return target.runFunction(target, name, args);
+      const nativeResult = target.runFunction(target, name, args);
+
+      // TODO Memory leak: Find a way to release handles when React clones/remove a component
+      // if (nativeResult) {
+      //   console.log(`[registerObjectFunction]`, {name, args, address: nativeResult.$$.ptr.toString(16), smartAddress: nativeResult.$$.smartPtr.toString(16)});
+      // }
+
+      return nativeResult;
     }
-
-    console.log({target})
   },
 
   setGlobalVariableFunction__proxy: 'sync',
@@ -84,11 +88,11 @@ mergeInto(LibraryManager.library, {
     console.log(logPrefix, decodedName);
 
     window[decodedName] = (...args) => {
-      console.log(logPrefix, 'Called with', args);
+      // console.log(logPrefix, 'Called with', args);
 
       const result = window.WasmRuntime.invoke(decodedName, args);
 
-      console.log(logPrefix, 'result', result);
+      // console.log(logPrefix, 'result', result);
 
       if (decodedName === '__turboModuleProxy') {
         if (!result) {

@@ -14,16 +14,12 @@ std::vector<std::unique_ptr<Task>> tasks;
 std::mutex tasksMutex;
 
 void run(void *func) {
-  std::cout << "Starting running a runner" << std::endl;
-
   auto runnerPtr = static_cast<Task *>(func);
   auto runnerVal = *runnerPtr;
 
   runnerVal();
 
   runnerPtr = nullptr;
-
-  std::cout << "Done running a runner" << std::endl;
 }
 
 Task NativeQueue::wrapRunnable(Task &&runnable) {
@@ -48,8 +44,6 @@ Task NativeQueue::wrapRunnable(Task &&runnable) {
 }
 
 void NativeQueue::runOnQueue(Task &&func) {
-  std::cout << "NativeQueue::runOnQueue" << std::endl;
-
   if (emscripten_is_main_runtime_thread()) {
     func();
 
