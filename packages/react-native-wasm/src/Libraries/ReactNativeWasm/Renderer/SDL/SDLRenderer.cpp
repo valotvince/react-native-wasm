@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "SDLRenderer.hpp"
-#include <folly/json.h>
 #include <react/renderer/components/text/ParagraphShadowNode.h>
 #include <thread>
 
@@ -51,13 +50,13 @@ void SDLRenderer::flush() {
   MAIN_SDL_RenderPresent(renderer);
 }
 
-void SDLRenderer::renderText(const facebook::react::ShadowView &view) {
+void SDLRenderer::renderText(ComponentView::Shared view) {
   std::lock_guard<std::mutex> guard(renderMutex);
 
-  auto contentFrame = view.layoutMetrics.frame;
+  auto contentFrame = view->layoutMetrics.frame;
 
   const auto &newState =
-    *std::static_pointer_cast<facebook::react::ParagraphShadowNode::ConcreteState const>(view.state);
+    *std::static_pointer_cast<facebook::react::ParagraphShadowNode::ConcreteState const>(view->state);
 
   float previousX = contentFrame.origin.x;
 
@@ -139,7 +138,7 @@ void SDLRenderer::setDrawColor(const facebook::react::SharedColor color) {
 void SDLRenderer::drawViewBorder(
   const facebook::react::Rect &contentFrame, BorderDirection direction, float borderWidth,
   const facebook::react::SharedColor borderColor) {
-  if (!borderWidth) {
+  if (!borderWidth || !borderColor) {
     return;
   }
 
@@ -177,10 +176,10 @@ void SDLRenderer::drawViewBorder(
   SDL_RenderFillRectF(renderer, &rect);
 }
 
-void SDLRenderer::drawViewBorders(const facebook::react::ShadowView &view) {
-  const auto &props = *std::static_pointer_cast<const facebook::react::ViewProps>(view.props);
-  const auto contentFrame = view.layoutMetrics.frame;
-  const auto borderMetrics = props.resolveBorderMetrics(view.layoutMetrics);
+void SDLRenderer::drawViewBorders(ComponentView::Shared view) {
+  const auto &props = *std::static_pointer_cast<const facebook::react::ViewProps>(view->props);
+  const auto contentFrame = view->layoutMetrics.frame;
+  const auto borderMetrics = props.resolveBorderMetrics(view->layoutMetrics);
 
   drawViewBorder(contentFrame, BorderDirection::LEFT, borderMetrics.borderWidths.left, borderMetrics.borderColors.left);
   drawViewBorder(
@@ -190,32 +189,38 @@ void SDLRenderer::drawViewBorders(const facebook::react::ShadowView &view) {
     contentFrame, BorderDirection::BOTTOM, borderMetrics.borderWidths.bottom, borderMetrics.borderColors.bottom);
 }
 
-void SDLRenderer::renderView(const facebook::react::ShadowView &view) {
+void SDLRenderer::renderView(ComponentView::Shared view) {
   std::lock_guard<std::mutex> guard(renderMutex);
 
-  const auto &props = *std::static_pointer_cast<const facebook::react::ViewProps>(view.props);
+  drawViewBorders(view);
 
-  setDrawColor(props.backgroundColor);
+  const auto &props = *std::static_pointer_cast<const facebook::react::ViewProps>(view->props);
 
-  auto contentFrame = view.layoutMetrics.frame;
+  if (!props.backgroundColor) {
+    return;
+  }
+
+  auto contentFrame = view->layoutMetrics.frame;
 
   SDL_FRect rect = {
     .x = contentFrame.origin.x,
     .y = contentFrame.origin.y,
     .w = contentFrame.size.width,
     .h = contentFrame.size.height};
-  SDL_RenderFillRectF(renderer, &rect);
 
-  drawViewBorders(view);
+  setDrawColor(props.backgroundColor);
+  SDL_RenderFillRectF(renderer, &rect);
 }
 
-void SDLRenderer::render(const facebook::react::ShadowView &view) {
-  std::string componentName(view.componentName);
-
-  if (componentName == "Paragraph") {
-    renderText(view);
+void SDLRenderer::render(ComponentView::Shared componentView) {
+  if (componentView->name == "Paragraph") {
+    renderText(componentView);
   } else {
-    renderView(view);
+    renderView(componentView);
+
+    for (auto it = componentView->children.begin(); it != componentView->children.end(); ++it) {
+      render(it->second);
+    }
   }
 }
 } // namespace ReactNativeWasm

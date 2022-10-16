@@ -206,6 +206,7 @@ const getReactNativeWasm = (reactNativeWasmDir, reactNativeDir) => {
       ...getFilesFromReactNativeWasmDir('Libraries/Components/View'),
       ...getFilesFromReactNativeWasmDir('Libraries/Components/Text'),
       ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Config'),
+      ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Fabric'),
       ...getFilesFromReactNativeWasmDir('Libraries/Utilities/Timing'),
       ...getFilesFromReactNativeWasmDir('Libraries/Utilities/DeviceInfo'),
       ...getFilesFromReactNativeWasmDir('Libraries/Utilities/DevSettings'),

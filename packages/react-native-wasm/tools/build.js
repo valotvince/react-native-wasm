@@ -4,7 +4,7 @@ const spawnPromise = require('./spawn-promise');
 const getCompilationManifest = require('./build/compilation-manifest');
 const buildLibrary = require('./build/build-library');
 
-module.exports = async ({ debug, appDir, reactNativeWasmDir, reactNativeDir }) => {
+module.exports = async ({ appDir, reactNativeWasmDir, reactNativeDir }) => {
   const { libraries } = getCompilationManifest(reactNativeWasmDir, reactNativeDir);
 
   for (const library of libraries) {
@@ -35,9 +35,6 @@ module.exports = async ({ debug, appDir, reactNativeWasmDir, reactNativeDir }) =
     'STACK_OVERFLOW_CHECK=1',
     'EXCEPTION_DEBUG=1',
   ].map((warning) => `-s${warning}`);
-
-  if (debug) {
-  }
 
   await spawnPromise(
     'emcc',

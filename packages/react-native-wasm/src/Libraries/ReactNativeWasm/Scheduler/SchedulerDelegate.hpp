@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "../Fabric/ComponentView.hpp"
 #include "../Renderer/Renderer.hpp"
 #include <react/renderer/scheduler/SchedulerDelegate.h>
 
@@ -17,7 +18,7 @@ namespace ReactNativeWasm {
  */
 class SchedulerDelegate : public facebook::react::SchedulerDelegate {
 public:
-  SchedulerDelegate(std::shared_ptr<ReactNativeWasm::Renderer> renderer) : renderer(renderer){};
+  SchedulerDelegate(ReactNativeWasm::Renderer::Shared renderer);
 
   /*
    * Called right after Scheduler computed (and laid out) a new updated version
@@ -54,6 +55,7 @@ public:
   ~SchedulerDelegate() override;
 
 private:
-  std::shared_ptr<ReactNativeWasm::Renderer> renderer;
+  ReactNativeWasm::Renderer::Shared renderer;
+  std::map<facebook::react::Tag, ReactNativeWasm::ComponentView::Shared> views;
 };
 } // namespace ReactNativeWasm

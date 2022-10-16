@@ -21,7 +21,7 @@ namespace ReactNativeWasm {
 
 auto runtimeMethods = std::map<std::string, const void *>();
 
-// TODO: Memory leak
+// TODO Memory leak: correctly remove js objects references
 void Runtime::WasmObjectValue::invalidate() {}
 
 Runtime::Runtime() noexcept {

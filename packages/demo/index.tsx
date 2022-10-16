@@ -6,18 +6,35 @@ const Demo = () => {
   const intervalId = useRef();
   const [timer, setTimer] = useState(0);
 
-  useEffect(() => {
-    return () => clearInterval(intervalId.current);
-  }, []);
-
   const startTimer = useCallback(() => {
     intervalId.current = setInterval(() => {
       setTimer((previousTimer) => previousTimer + 1);
-    }, 5000);
+    }, 2000);
   }, []);
 
   const stopTimer = useCallback(() => {
     clearInterval(intervalId.current);
+    intervalId.current = null;
+  }, []);
+
+  useEffect(() => {
+    // Hacky trick to remove once I figured out re-render & button press management
+    const listener = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        if (intervalId.current) {
+          stopTimer();
+        } else {
+          startTimer();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', listener);
+
+    return () => {
+      document.removeEventListener('keydown', listener);
+      clearInterval(intervalId.current);
+    };
   }, []);
 
   return (

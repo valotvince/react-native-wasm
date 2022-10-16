@@ -16,7 +16,7 @@ class SDLRenderer : public Renderer {
 public:
   SDLRenderer();
 
-  void render(const facebook::react::ShadowView &) override;
+  void render(ComponentView::Shared) override;
   void flush() override;
 
 private:
@@ -25,10 +25,10 @@ private:
 
   std::mutex renderMutex = std::mutex();
 
-  void renderText(const facebook::react::ShadowView &);
-  void renderView(const facebook::react::ShadowView &);
+  void renderText(ComponentView::Shared);
+  void renderView(ComponentView::Shared);
 
-  void drawViewBorders(const facebook::react::ShadowView &);
+  void drawViewBorders(ComponentView::Shared);
   void drawViewBorder(const facebook::react::Rect &, BorderDirection, float, const facebook::react::SharedColor);
 
   void setDrawColor(const facebook::react::SharedColor);

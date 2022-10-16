@@ -6,6 +6,15 @@
 #include <react/renderer/telemetry/SurfaceTelemetry.h>
 
 namespace ReactNativeWasm {
+
+SchedulerDelegate::SchedulerDelegate(ReactNativeWasm::Renderer::Shared rendererArg) {
+  renderer = rendererArg;
+  views = std::map<facebook::react::Tag, ReactNativeWasm::ComponentView::Shared>();
+
+  // TODO: Remove hack to have the Root view already registered at startup
+  views.insert({11, std::make_shared<ComponentView>()});
+};
+
 /*
  * Called right after Scheduler computed (and laid out) a new updated version
  * of the tree and calculated a set of mutations which are sufficient
@@ -41,23 +50,35 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
         switch (mutation.type) {
         case facebook::react::ShadowViewMutation::Create: {
           std::cout << "facebook::react::ShadowViewMutation::Create " << newChildShadowView.componentName << std::endl;
+
+          views.insert({newChildShadowView.tag, std::make_shared<ComponentView>()});
           break;
         }
 
         case facebook::react::ShadowViewMutation::Delete: {
           std::cout << "facebook::react::ShadowViewMutation::Delete" << std::endl;
+          views.erase(oldChildShadowView.tag);
           break;
         }
 
         case facebook::react::ShadowViewMutation::Insert: {
-          std::cout << "facebook::react::ShadowViewMutation::Insert " << newChildShadowView.componentName << std::endl;
+          std::cout << "facebook::react::ShadowViewMutation::Insert " << newChildShadowView.tag << ":"
+                    << newChildShadowView.componentName << std::endl;
 
-          renderer->render(newChildShadowView);
+          auto parentLookup = views.find(parentShadowView.tag);
+          auto childLookup = views.find(newChildShadowView.tag);
+
+          childLookup->second->update(newChildShadowView);
+          parentLookup->second->addChild(newChildShadowView.tag, childLookup->second);
           break;
         }
 
         case facebook::react::ShadowViewMutation::Remove: {
           std::cout << "facebook::react::ShadowViewMutation::Remove" << std::endl;
+
+          auto parentLookup = views.find(parentShadowView.tag);
+
+          parentLookup->second->removeChild(oldChildShadowView.tag);
           break;
         }
 
@@ -67,11 +88,20 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
         }
 
         case facebook::react::ShadowViewMutation::Update: {
-          std::cout << "facebook::react::ShadowViewMutation::Update " << newChildShadowView.componentName << std::endl;
+          std::cout << "facebook::react::ShadowViewMutation::Update " << newChildShadowView.tag << ":"
+                    << newChildShadowView.componentName << std::endl;
+
+          auto childLookup = views.find(newChildShadowView.tag);
+          childLookup->second->update(newChildShadowView);
+
           break;
         }
         }
       }
+
+      // TODO Perf: Don't render everything at once, only re-render changes
+      auto rootLookup = views.find(11);
+      renderer->render(rootLookup->second);
 
       // RCTPerformMountInstructions(
       //     transaction.getMutations(), /* _componentViewRegistry, _observerCoordinator,*/ surfaceId);
