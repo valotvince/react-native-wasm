@@ -30,8 +30,10 @@ const Demo = () => {
           <View style={[styles.box, { backgroundColor: 'rgba(0, 255, 0, 0.1)' }]}></View>
           <View style={[styles.box, { backgroundColor: 'rgba(0, 0, 255, 0.1)' }]}></View>
         </View>
-        <Button onPress={startTimer} text="Start Timer" />
-        <Button onPress={stopTimer} text="Stop Timer" />
+        <View style={styles.buttonsContainer}>
+          <Button onPress={startTimer} text="Start Timer" />
+          <Button onPress={stopTimer} text="Stop Timer" />
+        </View>
       </View>
     </View>
   );
@@ -50,6 +52,9 @@ const styles = StyleSheet.create({
     borderColor: 'red',
     flex: 1,
     flexDirection: 'column',
+  },
+  buttonsContainer: {
+    marginTop: 10,
   },
   boxesContainer: {
     flexDirection: 'row',

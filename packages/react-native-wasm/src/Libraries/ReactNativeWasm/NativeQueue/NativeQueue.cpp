@@ -13,7 +13,7 @@ NativeQueue::NativeQueue() {}
 std::vector<std::unique_ptr<Task>> tasks;
 std::mutex tasksMutex;
 
-void run(void * func) {
+void run(void *func) {
   std::cout << "Starting running a runner" << std::endl;
 
   auto runnerPtr = static_cast<Task *>(func);
@@ -58,8 +58,7 @@ void NativeQueue::runOnQueue(Task &&func) {
 
   auto wrappedRunnable = std::make_unique<Task>(wrapRunnable(std::move(func)));
 
-  emscripten_async_run_in_main_runtime_thread(
-    EM_FUNC_SIG_VI, ReactNativeWasm::run, (uint32_t)wrappedRunnable.get());
+  emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, ReactNativeWasm::run, (uint32_t)wrappedRunnable.get());
 
   std::lock_guard<std::mutex> guard(tasksMutex);
 

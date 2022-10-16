@@ -22,8 +22,7 @@ namespace ReactNativeWasm {
 auto runtimeMethods = std::map<std::string, const void *>();
 
 // TODO: Memory leak
-void Runtime::WasmObjectValue::invalidate() {
-}
+void Runtime::WasmObjectValue::invalidate() {}
 
 Runtime::Runtime() noexcept {
   emscripten::val::global("window").set("WasmRuntime", this);
@@ -183,8 +182,6 @@ Value Runtime::callAsConstructor(const Function &, const Value *args, size_t cou
 
 Function
 Runtime::createFunctionFromHostFunction(const PropNameID &name, unsigned int paramCount, HostFunctionType func) {
-  std::cout << "Runtime::createFunctionFromHostFunction name:" << name.utf8(*this) << std::endl;
-
   auto object = make<Object>(new WasmObjectValue(this, func, name.utf8(*this)));
 
   return object.getFunction(*this);
@@ -243,8 +240,6 @@ Value Runtime::toValue(emscripten::val val, std::string name) {
 }
 
 Value Runtime::call(const Function &function, const Value &jsThis, const Value *args, size_t count) {
-  std::cout << "Runtime::call" << std::endl;
-
   auto decodedFunction = static_cast<const WasmObjectValue *>(getPointerValue(function));
 
   std::vector<emscripten::val> jsArgs;
@@ -373,6 +368,7 @@ bool Runtime::isHostFunction(const Function &) const {
   std::cout << "Runtime::isHostFunction" << std::endl;
   throw std::logic_error("Not implemented");
 };
+
 Array Runtime::getPropertyNames(const Object &object) {
   auto decodedObject = static_cast<const WasmObjectValue *>(getPointerValue(object));
 
@@ -386,8 +382,6 @@ Array Runtime::getPropertyNames(const Object &object) {
 
 // TODO Create a real weak object
 WeakObject Runtime::createWeakObject(const Object &object) {
-  std::cout << "Runtime::createWeakObject" << std::endl;
-
   auto pv = getPointerValue(object);
 
   return make<facebook::jsi::WeakObject>(cloneObject(pv));
@@ -463,18 +457,14 @@ void Runtime::setPropertyValue(
     auto wasmValue = static_cast<const WasmObjectValue *>(getPointerValue(value));
 
     if (wasmValue->isFunction) {
-      std::cout << "Function " << humanDecodedName << std::endl;
       runtimeMethods.insert({humanDecodedName, wasmValue});
       ReactNativeWasm::JavascriptAccessor::setGlobalVariableFunction(humanDecodedName.c_str());
     } else if (wasmValue->isHostObjectProxy) {
-      std::cout << "Host object " << humanDecodedName << std::endl;
-
       decodedObject->data.set("native__" + humanDecodedName, wasmValue->hostObjectProxy);
 
       ReactNativeWasm::JavascriptAccessor::setGlobalVariableObject(humanDecodedName.c_str());
 
     } else {
-      std::cout << "Value " << humanDecodedName << std::endl;
       decodedObject->data.set(decodedName->data, wasmValue->data);
     }
   }
@@ -545,8 +535,6 @@ EMSCRIPTEN_BINDINGS(ReactWasmRuntime) {
       emscripten::optional_override([](
                                       ReactNativeWasm::Runtime::HostObjectProxy &self, emscripten::val jsThis,
                                       std::string functionName, emscripten::val jsonArgs) {
-        std::cout << "HostObjectProxy::get Trying to get function: '" << functionName << "'" << std::endl;
-
         auto propName = facebook::jsi::PropNameID::forAscii(self.runtime, functionName.c_str(), functionName.size());
 
         HostFunctionType func;
@@ -570,8 +558,6 @@ EMSCRIPTEN_BINDINGS(ReactWasmRuntime) {
       "get",
       emscripten::optional_override(
         [](ReactNativeWasm::Runtime::HostObjectProxy &self, emscripten::val jsThis, std::string propertyName) {
-          std::cout << "HostObjectProxy::get Trying to get property: '" << propertyName << "'" << std::endl;
-
           auto propName = facebook::jsi::PropNameID::forAscii(self.runtime, propertyName.c_str(), propertyName.size());
 
           auto value = self.ho->get(self.runtime, propName);

@@ -21,8 +21,6 @@ TextMeasurement TextLayoutManager::measure(
   float previousY = 24;
 
   for (auto const &fragment : attributedStringBox.getValue().getFragments()) {
-    std::cout << "Fragment Attachment " << fragment.isAttachment() << std::endl;
-
     auto textAttributes = fragment.textAttributes;
     auto fontSize = textAttributes.fontSize;
 
@@ -35,8 +33,6 @@ TextMeasurement TextLayoutManager::measure(
     previousX = textWidth * fontSize;
     previousY = fontSize + 2;
   }
-
-  std::cout << "PreviousX " << previousX << " PreviousY " << previousY << std::endl;
 
   return TextMeasurement{{previousX, previousY}, attachments};
 }

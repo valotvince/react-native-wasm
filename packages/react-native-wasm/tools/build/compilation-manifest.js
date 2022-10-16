@@ -202,6 +202,7 @@ const getReactNativeWasm = (reactNativeWasmDir, reactNativeDir) => {
     definitions: [],
     sources: [
       ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/UIManager'),
+      ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Animated'),
       ...getFilesFromReactNativeWasmDir('Libraries/Components/View'),
       ...getFilesFromReactNativeWasmDir('Libraries/Components/Text'),
       ...getFilesFromReactNativeWasmDir('Libraries/ReactNativeWasm/Config'),

@@ -5,17 +5,17 @@
 #include <emscripten/html5.h>
 
 namespace ReactNativeWasm {
-  WebGLRenderer::WebGLRenderer() {}
+WebGLRenderer::WebGLRenderer() {}
 
-  void WebGLRenderer::flush() {}
+void WebGLRenderer::flush() {}
 
-  void WebGLRenderer::render(const facebook::react::ShadowView &view) {
-    std::string componentName(view.componentName);
+void WebGLRenderer::render(const facebook::react::ShadowView &view) {
+  std::string componentName(view.componentName);
 
-    if (componentName == "Paragraph") {
-      // renderText(view);
-    } else {
-      // renderView(view);
-    }
+  if (componentName == "Paragraph") {
+    // renderText(view);
+  } else {
+    // renderView(view);
   }
 }
+} // namespace ReactNativeWasm

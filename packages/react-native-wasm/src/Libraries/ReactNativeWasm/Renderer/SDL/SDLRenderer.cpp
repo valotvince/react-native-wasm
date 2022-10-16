@@ -4,7 +4,6 @@
 #include "SDLRenderer.hpp"
 #include <folly/json.h>
 #include <react/renderer/components/text/ParagraphShadowNode.h>
-#include <react/renderer/graphics/Color.h>
 #include <thread>
 
 SDL_Texture *MAIN_SDL_CreateTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
@@ -50,8 +49,6 @@ void SDLRenderer::flush() {
 
   // SDL_RenderClear(renderer);
   MAIN_SDL_RenderPresent(renderer);
-
-  std::cout << " FLUSH " << std::endl;
 }
 
 void SDLRenderer::renderText(const facebook::react::ShadowView &view) {
@@ -125,33 +122,91 @@ void SDLRenderer::renderText(const facebook::react::ShadowView &view) {
   }
 }
 
+void SDLRenderer::setDrawColor(const facebook::react::SharedColor color) {
+  facebook::react::ColorComponents drawColor;
+
+  if (color) {
+    drawColor = facebook::react::colorComponentsFromColor(color);
+  } else {
+    drawColor = facebook::react::colorComponentsFromColor(facebook::react::clearColor());
+  }
+
+  SDL_SetRenderDrawColor(
+    renderer, static_cast<Uint8>(drawColor.red * 255), static_cast<Uint8>(drawColor.green * 255),
+    static_cast<Uint8>(drawColor.blue * 255), static_cast<Uint8>(drawColor.alpha * 255));
+}
+
+void SDLRenderer::drawViewBorder(
+  const facebook::react::Rect &contentFrame, BorderDirection direction, float borderWidth,
+  const facebook::react::SharedColor borderColor) {
+  if (!borderWidth) {
+    return;
+  }
+
+  SDL_FRect rect;
+
+  switch (direction) {
+  case BorderDirection::LEFT:
+    rect = SDL_FRect{
+      .x = contentFrame.origin.x, .y = contentFrame.origin.y, .w = borderWidth, .h = contentFrame.size.height};
+    break;
+  case BorderDirection::TOP:
+    rect =
+      SDL_FRect{.x = contentFrame.origin.x, .y = contentFrame.origin.y, .w = contentFrame.size.width, .h = borderWidth};
+    break;
+  case BorderDirection::RIGHT:
+    rect = SDL_FRect{
+      .x = contentFrame.origin.x + contentFrame.size.width - borderWidth,
+      .y = contentFrame.origin.y,
+      .w = borderWidth,
+      .h = contentFrame.size.height};
+    break;
+  case BorderDirection::BOTTOM:
+    rect = SDL_FRect{
+      .x = contentFrame.origin.x,
+      .y = contentFrame.origin.y + contentFrame.size.height - borderWidth,
+      .w = contentFrame.size.width,
+      .h = borderWidth};
+    break;
+
+  default:
+    break;
+  }
+
+  setDrawColor(borderColor);
+  SDL_RenderFillRectF(renderer, &rect);
+}
+
+void SDLRenderer::drawViewBorders(const facebook::react::ShadowView &view) {
+  const auto &props = *std::static_pointer_cast<const facebook::react::ViewProps>(view.props);
+  const auto contentFrame = view.layoutMetrics.frame;
+  const auto borderMetrics = props.resolveBorderMetrics(view.layoutMetrics);
+
+  drawViewBorder(contentFrame, BorderDirection::LEFT, borderMetrics.borderWidths.left, borderMetrics.borderColors.left);
+  drawViewBorder(
+    contentFrame, BorderDirection::TOP, borderMetrics.borderWidths.right, borderMetrics.borderColors.right);
+  drawViewBorder(contentFrame, BorderDirection::RIGHT, borderMetrics.borderWidths.top, borderMetrics.borderColors.top);
+  drawViewBorder(
+    contentFrame, BorderDirection::BOTTOM, borderMetrics.borderWidths.bottom, borderMetrics.borderColors.bottom);
+}
+
 void SDLRenderer::renderView(const facebook::react::ShadowView &view) {
   std::lock_guard<std::mutex> guard(renderMutex);
 
-  const auto &newViewProps = *std::static_pointer_cast<const facebook::react::ViewProps>(view.props);
+  const auto &props = *std::static_pointer_cast<const facebook::react::ViewProps>(view.props);
 
-  facebook::react::ColorComponents backgroundColor;
-
-  if (newViewProps.backgroundColor) {
-    backgroundColor = facebook::react::colorComponentsFromColor(newViewProps.backgroundColor);
-  } else {
-    backgroundColor = facebook::react::colorComponentsFromColor(facebook::react::clearColor());
-  }
-
-  // Set a color for drawing matching the earlier `ctx.fillStyle = "green"`.
-  SDL_SetRenderDrawColor(
-    renderer, static_cast<Uint8>(backgroundColor.red * 255), static_cast<Uint8>(backgroundColor.green * 255),
-    static_cast<Uint8>(backgroundColor.blue * 255), static_cast<Uint8>(backgroundColor.alpha * 255));
+  setDrawColor(props.backgroundColor);
 
   auto contentFrame = view.layoutMetrics.frame;
 
-  // Create and draw a rectangle like in the earlier `ctx.fillRect()`.
   SDL_FRect rect = {
     .x = contentFrame.origin.x,
     .y = contentFrame.origin.y,
     .w = contentFrame.size.width,
     .h = contentFrame.size.height};
   SDL_RenderFillRectF(renderer, &rect);
+
+  drawViewBorders(view);
 }
 
 void SDLRenderer::render(const facebook::react::ShadowView &view) {

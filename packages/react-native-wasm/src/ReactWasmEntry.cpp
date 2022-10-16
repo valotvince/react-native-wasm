@@ -43,6 +43,7 @@
 #include "Libraries/Components/Text/TextManager.hpp"
 #include "Libraries/Components/Text/VirtualTextManager.hpp"
 #include "Libraries/Components/View/ViewManager.hpp"
+#include "Libraries/ReactNativeWasm/Animated/NativeAnimatedModule.hpp"
 #include "Libraries/ReactNativeWasm/Bindings/JSWasmExecutor.hpp"
 #include "Libraries/ReactNativeWasm/Config/ReactNativeConfig.hpp"
 #include "Libraries/ReactNativeWasm/NativeQueue/NativeQueue.hpp"
@@ -91,6 +92,7 @@ UniqueCxxNativeModuleMap getCxxNativeModules() {
   modules.insert({"DeviceInfo", []() { return std::make_unique<ReactNativeWasm::DeviceInfo>(); }});
   modules.insert({"SourceCode", []() { return std::make_unique<ReactNativeWasm::SourceCode>(); }});
   modules.insert({"StatusBarManager", []() { return std::make_unique<ReactNativeWasm::StatusBarManager>(); }});
+  modules.insert({"NativeAnimatedModule", []() { return std::make_unique<ReactNativeWasm::NativeAnimatedModule>(); }});
 
   return modules;
 }
@@ -125,6 +127,10 @@ UniqueNativeModuleVector getNativeModules(
   modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
     instance, ReactNativeWasm::Timing::Name, []() { return std::make_unique<ReactNativeWasm::Timing>(); },
     nativeQueue));
+
+  modules.push_back(std::make_unique<facebook::react::CxxNativeModule>(
+    instance, ReactNativeWasm::NativeAnimatedModule::Name,
+    []() { return std::make_unique<ReactNativeWasm::NativeAnimatedModule>(); }, nativeQueue));
 
   return modules;
 }
@@ -262,6 +268,8 @@ void installTurboModulesBindings() {
     auto nativeModuleLookup = nativeModulesLocked->find(name);
 
     if (nativeModuleLookup != nativeModulesLocked->end()) {
+      std::cout << "Found !" << std::endl;
+
       auto turboModule =
         std::make_shared<facebook::react::TurboCxxModule>(nativeModuleLookup->second(), jsInvokerLocked);
 

@@ -66,8 +66,6 @@ void Timing::tick() {
       auto args = folly::dynamic::array(timersToFire);
 
       instance->callJSFunction("JSTimers", "callTimers", std::move(args));
-    } else {
-      std::cerr << "not locked" << std::endl;
     }
   }
 }
@@ -76,8 +74,6 @@ void Timing::loop() {
   while (true) {
     try {
       this->tick();
-    } catch (const std::exception &e) {
-      std::cerr << "Exception " << e.what() << std::endl;
     } catch (...) {
       std::cerr << "Exception raised in tick" << std::endl;
     }
@@ -113,13 +109,12 @@ auto Timing::getMethods() -> std::vector<Method> {
 
         for (auto it = this->timers->begin(); it != timers->end(); ++it) {
           if (it->id == deleteTimerId) {
-            std::cout << "Timing > Found timer to erase" << std::endl;
             this->timers->erase(it);
             break;
           }
         }
       }),
-    Method("setSendIdleEvents", [](folly::dynamic args) {}),
+    Method("setSendIdleEvents", [](folly::dynamic args) { std::cout << "Timing::setSendIdleEvents" << std::endl; }),
   };
 }
 } // namespace ReactNativeWasm

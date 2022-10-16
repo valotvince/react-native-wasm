@@ -41,20 +41,11 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
         switch (mutation.type) {
         case facebook::react::ShadowViewMutation::Create: {
           std::cout << "facebook::react::ShadowViewMutation::Create " << newChildShadowView.componentName << std::endl;
-
-          auto contentFrame = newChildShadowView.layoutMetrics.frame;
-
-          std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y
-                    << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
           break;
         }
 
         case facebook::react::ShadowViewMutation::Delete: {
           std::cout << "facebook::react::ShadowViewMutation::Delete" << std::endl;
-          auto contentFrame = newChildShadowView.layoutMetrics.frame;
-
-          std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y
-                    << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
           break;
         }
 
@@ -77,10 +68,6 @@ void SchedulerDelegate::schedulerDidFinishTransaction(
 
         case facebook::react::ShadowViewMutation::Update: {
           std::cout << "facebook::react::ShadowViewMutation::Update " << newChildShadowView.componentName << std::endl;
-          auto contentFrame = newChildShadowView.layoutMetrics.frame;
-
-          std::cout << "x:" << contentFrame.origin.x << " y:" << contentFrame.origin.y
-                    << " width:" << contentFrame.size.width << " height:" << contentFrame.size.height << std::endl;
           break;
         }
         }

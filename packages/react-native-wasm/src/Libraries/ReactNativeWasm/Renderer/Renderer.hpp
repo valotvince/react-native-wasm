@@ -5,7 +5,7 @@
 namespace ReactNativeWasm {
 class Renderer {
 public:
-  Renderer() {};
+  Renderer(){};
 
   virtual void render(const facebook::react::ShadowView &) = 0;
   virtual void flush() = 0;

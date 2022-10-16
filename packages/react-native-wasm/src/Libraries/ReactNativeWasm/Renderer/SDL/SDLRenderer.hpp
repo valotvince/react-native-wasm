@@ -6,7 +6,12 @@
 
 #include "../Renderer.hpp"
 
+#include <react/renderer/graphics/Color.h>
+
 namespace ReactNativeWasm {
+
+enum BorderDirection { LEFT, TOP, RIGHT, BOTTOM };
+
 class SDLRenderer : public Renderer {
 public:
   SDLRenderer();
@@ -22,5 +27,10 @@ private:
 
   void renderText(const facebook::react::ShadowView &);
   void renderView(const facebook::react::ShadowView &);
+
+  void drawViewBorders(const facebook::react::ShadowView &);
+  void drawViewBorder(const facebook::react::Rect &, BorderDirection, float, const facebook::react::SharedColor);
+
+  void setDrawColor(const facebook::react::SharedColor);
 };
 } // namespace ReactNativeWasm
