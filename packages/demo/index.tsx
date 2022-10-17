@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppRegistry, View, Text, StyleSheet, DeviceEventEmitter } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { AppRegistry, View, Text, StyleSheet } from 'react-native';
 import { Button } from './src/components/button';
+import { NavigationProvider } from './src/navigation/navigation';
 
 const Demo = () => {
   const intervalId = useRef();
@@ -17,42 +18,27 @@ const Demo = () => {
     intervalId.current = null;
   }, []);
 
-  useEffect(() => {
-    // Hacky trick to remove once I figured out re-render & button press management
-    const listener = (event) => {
-      if (event.key === 'Return') {
-        if (intervalId.current) {
-          stopTimer();
-        } else {
-          startTimer();
-        }
-      }
-    };
-
-    const keyDownSubscription = DeviceEventEmitter.addListener('keydown', listener);
-
-    return () => {
-      keyDownSubscription.remove();
-      clearInterval(intervalId.current);
-    };
-  }, []);
+  const startTimerNav = useMemo(() => ({ id: 'start-timer', down: 'stop-timer', enter: startTimer }), [startTimer]);
+  const stopTimerNav = useMemo(() => ({ id: 'stop-timer', up: 'start-timer', enter: stopTimer }), [stopTimer]);
 
   return (
-    <View style={styles.root}>
-      <View style={styles.appContainer}>
-        <Text style={styles.title}>Hello world!</Text>
-        <Text style={styles.timer}>Timer: {timer}</Text>
-        <View style={styles.boxesContainer}>
-          <View style={[styles.box, { backgroundColor: 'rgba(255, 0, 0, 0.1)' }]}></View>
-          <View style={[styles.box, { backgroundColor: 'rgba(0, 255, 0, 0.1)' }]}></View>
-          <View style={[styles.box, { backgroundColor: 'rgba(0, 0, 255, 0.1)' }]}></View>
-        </View>
-        <View style={styles.buttonsContainer}>
-          <Button onPress={startTimer} text="Start Timer" />
-          <Button onPress={stopTimer} text="Stop Timer" />
+    <NavigationProvider defaultFocus="start-timer">
+      <View style={styles.root}>
+        <View style={styles.appContainer}>
+          <Text style={styles.title}>Hello world!</Text>
+          <Text style={styles.timer}>Timer: {timer}</Text>
+          <View style={styles.boxesContainer}>
+            <View style={[styles.box, { backgroundColor: 'rgba(255, 0, 0, 0.1)' }]}></View>
+            <View style={[styles.box, { backgroundColor: 'rgba(0, 255, 0, 0.1)' }]}></View>
+            <View style={[styles.box, { backgroundColor: 'rgba(0, 0, 255, 0.1)' }]}></View>
+          </View>
+          <View style={styles.buttonsContainer}>
+            <Button navigation={startTimerNav} text="Start Timer" />
+            <Button navigation={stopTimerNav} text="Stop Timer" />
+          </View>
         </View>
       </View>
-    </View>
+    </NavigationProvider>
   );
 };
 
