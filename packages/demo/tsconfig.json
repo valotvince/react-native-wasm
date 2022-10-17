@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "jsx": "react",
-    "lib": ["dom", "es5", "es6"]
+    "lib": ["es5", "es6"]
   },
   "include": ["src/**/*", "index.tsx"]
 }
