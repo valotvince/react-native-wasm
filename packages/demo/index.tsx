@@ -7,16 +7,18 @@ const Demo = () => {
   const intervalId = useRef();
   const [timer, setTimer] = useState(0);
 
-  const startTimer = useCallback(() => {
-    intervalId.current = setInterval(() => {
-      setTimer((previousTimer) => previousTimer + 1);
-    }, 2000);
-  }, []);
-
   const stopTimer = useCallback(() => {
     clearInterval(intervalId.current);
     intervalId.current = null;
   }, []);
+
+  const startTimer = useCallback(() => {
+    stopTimer();
+
+    intervalId.current = setInterval(() => {
+      setTimer((previousTimer) => previousTimer + 1);
+    }, 2000);
+  }, [stopTimer]);
 
   const startTimerNav = useMemo(() => ({ id: 'start-timer', down: 'stop-timer', enter: startTimer }), [startTimer]);
   const stopTimerNav = useMemo(() => ({ id: 'stop-timer', up: 'start-timer', enter: stopTimer }), [stopTimer]);
