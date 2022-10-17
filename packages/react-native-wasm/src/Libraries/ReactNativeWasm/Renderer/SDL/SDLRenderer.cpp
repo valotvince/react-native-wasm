@@ -222,24 +222,22 @@ void SDLRenderer::drawViewBorders(ComponentView::Shared view) {
 void SDLRenderer::renderView(ComponentView::Shared view) {
   std::lock_guard<std::mutex> guard(renderMutex);
 
-  drawViewBorders(view);
-
   const auto &props = *std::static_pointer_cast<const facebook::react::ViewProps>(view->props);
 
-  if (!props.backgroundColor) {
-    return;
+  if (props.backgroundColor) {
+    auto contentFrame = view->layoutMetrics.frame;
+
+    SDL_FRect rect = {
+      .x = contentFrame.origin.x,
+      .y = contentFrame.origin.y,
+      .w = contentFrame.size.width,
+      .h = contentFrame.size.height};
+
+    setDrawColor(props.backgroundColor);
+    SDL_RenderFillRectF(renderer, &rect);
   }
 
-  auto contentFrame = view->layoutMetrics.frame;
-
-  SDL_FRect rect = {
-    .x = contentFrame.origin.x,
-    .y = contentFrame.origin.y,
-    .w = contentFrame.size.width,
-    .h = contentFrame.size.height};
-
-  setDrawColor(props.backgroundColor);
-  SDL_RenderFillRectF(renderer, &rect);
+  drawViewBorders(view);
 }
 
 void SDLRenderer::render(ComponentView::Shared componentView) {
