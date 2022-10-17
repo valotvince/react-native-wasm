@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <mutex>
+#include <thread>
 
 #include "../Renderer.hpp"
 
@@ -14,7 +15,8 @@ enum BorderDirection { LEFT, TOP, RIGHT, BOTTOM };
 
 class SDLRenderer : public Renderer {
 public:
-  SDLRenderer();
+  SDLRenderer(std::shared_ptr<facebook::react::Instance>);
+  ~SDLRenderer();
 
   void render(ComponentView::Shared) override;
   void flush() override;
@@ -23,7 +25,10 @@ private:
   SDL_Renderer *renderer;
   SDL_Window *window;
 
-  std::mutex renderMutex = std::mutex();
+  std::thread thread;
+  std::mutex renderMutex;
+
+  void loop();
 
   void renderText(ComponentView::Shared);
   void renderView(ComponentView::Shared);

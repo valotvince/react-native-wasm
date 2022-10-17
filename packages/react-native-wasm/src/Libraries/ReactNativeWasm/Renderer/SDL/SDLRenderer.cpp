@@ -3,7 +3,6 @@
 
 #include "SDLRenderer.hpp"
 #include <react/renderer/components/text/ParagraphShadowNode.h>
-#include <thread>
 
 SDL_Texture *MAIN_SDL_CreateTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
   if (emscripten_is_main_runtime_thread()) {
@@ -35,12 +34,43 @@ void MAIN_SDL_RenderPresent(SDL_Renderer *renderer) {
 }
 
 namespace ReactNativeWasm {
-SDLRenderer::SDLRenderer() {
+SDLRenderer::SDLRenderer(std::shared_ptr<facebook::react::Instance> instance) : Renderer(instance) {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
 
   // Initialize a 300x300 window and a renderer.
   SDL_CreateWindowAndRenderer(300, 300, 0, &window, &renderer);
+
+  thread = std::thread(&SDLRenderer::loop, std::ref(*this));
+}
+
+SDLRenderer::~SDLRenderer() { pthread_cancel(thread.native_handle()); }
+
+void SDLRenderer::loop() {
+  while (true) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+      switch (event.type) {
+      case SDL_QUIT:
+        std::cout << "Key quit" << std::endl;
+        break;
+      case SDL_KEYDOWN: {
+        folly::dynamic params = folly::dynamic::array(
+          "keydown", folly::dynamic::object("key", std::string(SDL_GetKeyName(event.key.keysym.sym))));
+
+        reactInstance->callJSFunction("RCTDeviceEventEmitter", "emit", std::move(params));
+        break;
+      }
+
+      case SDL_KEYUP:
+        folly::dynamic params = folly::dynamic::array(
+          "keyup", folly::dynamic::object("key", std::string(SDL_GetKeyName(event.key.keysym.sym))));
+
+        reactInstance->callJSFunction("RCTDeviceEventEmitter", "emit", std::move(params));
+        break;
+      }
+    }
+  }
 }
 
 void SDLRenderer::flush() {

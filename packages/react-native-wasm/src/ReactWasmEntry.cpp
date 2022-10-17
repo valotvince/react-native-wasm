@@ -289,8 +289,11 @@ void installTurboModulesBindings() {
     longLivedObjectCollection_);
 }
 
+void initRenderer() { renderer = std::make_shared<ReactNativeWasm::SDLRenderer>(reactInstance); }
+
 void run() {
   initReactInstance();
+  initRenderer();
   installTurboModulesBindings();
   initReactScheduler();
 
@@ -298,8 +301,6 @@ void run() {
 }
 
 int main(int argc, char *argv[]) {
-  renderer = std::make_shared<ReactNativeWasm::SDLRenderer>();
-
   run();
 
   emscripten_exit_with_live_runtime();

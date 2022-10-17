@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppRegistry, View, Text, StyleSheet } from 'react-native';
+import { AppRegistry, View, Text, StyleSheet, DeviceEventEmitter } from 'react-native';
 import { Button } from './src/components/button';
 
 const Demo = () => {
@@ -19,8 +19,8 @@ const Demo = () => {
 
   useEffect(() => {
     // Hacky trick to remove once I figured out re-render & button press management
-    const listener = (event: KeyboardEvent) => {
-      if (event.key === 'Enter') {
+    const listener = (event) => {
+      if (event.key === 'Return') {
         if (intervalId.current) {
           stopTimer();
         } else {
@@ -29,10 +29,10 @@ const Demo = () => {
       }
     };
 
-    document.addEventListener('keydown', listener);
+    const keyDownSubscription = DeviceEventEmitter.addListener('keydown', listener);
 
     return () => {
-      document.removeEventListener('keydown', listener);
+      keyDownSubscription.remove();
       clearInterval(intervalId.current);
     };
   }, []);
