@@ -49,26 +49,26 @@ SDLRenderer::~SDLRenderer() { pthread_cancel(thread.native_handle()); }
 void SDLRenderer::loop() {
   while (true) {
     SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      switch (event.type) {
-      case SDL_QUIT:
-        std::cout << "Key quit" << std::endl;
-        break;
-      case SDL_KEYDOWN: {
-        folly::dynamic params = folly::dynamic::array(
-          "keydown", folly::dynamic::object("key", std::string(SDL_GetKeyName(event.key.keysym.sym))));
+    SDL_WaitEvent(&event);
 
-        reactInstance->callJSFunction("RCTDeviceEventEmitter", "emit", std::move(params));
-        break;
-      }
+    switch (event.type) {
+    case SDL_QUIT:
+      std::cout << "Key quit" << std::endl;
+      break;
+    case SDL_KEYDOWN: {
+      folly::dynamic params = folly::dynamic::array(
+        "keydown", folly::dynamic::object("key", std::string(SDL_GetKeyName(event.key.keysym.sym))));
 
-      case SDL_KEYUP:
-        folly::dynamic params = folly::dynamic::array(
-          "keyup", folly::dynamic::object("key", std::string(SDL_GetKeyName(event.key.keysym.sym))));
+      reactInstance->callJSFunction("RCTDeviceEventEmitter", "emit", std::move(params));
+      break;
+    }
 
-        reactInstance->callJSFunction("RCTDeviceEventEmitter", "emit", std::move(params));
-        break;
-      }
+    case SDL_KEYUP:
+      folly::dynamic params = folly::dynamic::array(
+        "keyup", folly::dynamic::object("key", std::string(SDL_GetKeyName(event.key.keysym.sym))));
+
+      reactInstance->callJSFunction("RCTDeviceEventEmitter", "emit", std::move(params));
+      break;
     }
   }
 }
