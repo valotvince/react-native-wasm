@@ -1,9 +1,12 @@
 const Koa = require('koa');
 const koaStatic = require('koa-static');
 const path = require('path');
+const koaAccessLogs = require('koa-accesslog');
 
 module.exports = ({ reactNativeWasmDir }) => {
   const app = new Koa();
+
+  app.use(koaAccessLogs());
 
   app.use(async (ctx, next) => {
     ctx.set('access-control-allow-origin', '*');

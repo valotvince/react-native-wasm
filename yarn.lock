@@ -3108,6 +3108,13 @@ kleur@^3.0.3:
   resolved "https://verdaccio.m6web.fr/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
+koa-accesslog@^1.0.0:
+  version "1.0.0"
+  resolved "https://verdaccio.m6web.fr/koa-accesslog/-/koa-accesslog-1.0.0.tgz#febc4efae957d25e727b65d8463e444519de69eb"
+  integrity sha512-drpakus6DsxCW7mh05O8zmwTTUMGe63o1PMPrz4+6ytypt0UCLRjgpj4AapxxXPWV1nOpcz1YtNP57QbKLfY0w==
+  dependencies:
+    moment "^2.26.0"
+
 koa-compose@^4.1.0:
   version "4.1.0"
   resolved "https://verdaccio.m6web.fr/koa-compose/-/koa-compose-4.1.0.tgz#507306b9371901db41121c812e923d0d67d3e877"
@@ -3761,6 +3768,11 @@ mkdirp@^0.5.1:
   integrity sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==
   dependencies:
     minimist "^1.2.6"
+
+moment@^2.26.0:
+  version "2.29.4"
+  resolved "https://verdaccio.m6web.fr/moment/-/moment-2.29.4.tgz#3dbe052889fe7c1b2ed966fcb3a77328964ef108"
+  integrity sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==
 
 ms@2.0.0:
   version "2.0.0"

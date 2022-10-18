@@ -20,6 +20,7 @@
     "@types/react-native": "^0.69.6",
     "crypto": "^1.0.1",
     "koa": "^2.13.4",
+    "koa-accesslog": "^1.0.0",
     "koa-static": "^5.0.0",
     "metro-react-native-babel-preset": "^0.72.2",
     "react-native-platform-override": "1.6.13",
