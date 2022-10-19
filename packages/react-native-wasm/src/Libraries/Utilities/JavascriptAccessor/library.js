@@ -41,6 +41,9 @@ mergeInto(LibraryManager.library, {
       script.onload = () => {
         Module.__onBundleLoaded();
       };
+      script.onerror = () => {
+        console.error('An error happened during the loading of the react-native bundle');
+      }
 
       document.body.appendChild(script);
   },

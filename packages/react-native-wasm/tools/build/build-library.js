@@ -40,8 +40,8 @@ const getObjectOutputFilePath = (outputDirectory, sourcePath) => {
   return path.join(outputDirectory, sourcePath.substring(sourcePath.lastIndexOf('/') + 1).replace(/\.(cpp|cc)/, '.o'));
 };
 
-module.exports = async (cwd, library) => {
-  const outputDirectory = path.join(cwd, 'build', library.name);
+module.exports = async (cwd, library, { debug }) => {
+  const outputDirectory = path.join(cwd, 'build', library.name, debug ? 'debug' : 'release');
 
   await fs.mkdir(path.join(outputDirectory), { recursive: true });
 
@@ -66,14 +66,18 @@ module.exports = async (cwd, library) => {
 
   const options = ['USE_PTHREADS=1'].map((warning) => `-s${warning}`);
 
+  if (debug) {
+    options.push('-g', '-O0', '-fexceptions', '-fsanitize=address');
+  } else {
+    options.push('-O2');
+  }
+
   await spawnPromise(
     'emcc',
     [
       '-std=c++17',
       '-Wall',
-      '-fexceptions',
-      '-fsanitize=address',
-      '-g',
+
       ...options,
 
       ...library.compilerFlags,

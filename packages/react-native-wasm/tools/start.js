@@ -13,7 +13,7 @@ const reactNativeDir = path.resolve(path.join(appDir, 'node_modules', 'react-nat
 const argv = process.argv.slice(2);
 
 const start = async () => {
-  const options = { appDir, reactNativeWasmDir, reactNativeDir, debug: !!argv['--debug'] };
+  const options = { appDir, reactNativeWasmDir, reactNativeDir, buildConfig: { debug: !!argv['--debug'] } };
 
   await deps(options);
   await build(options);
