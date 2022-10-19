@@ -88,7 +88,7 @@ module.exports = async ({ appDir, reactNativeWasmDir, reactNativeDir, buildConfi
       'Resources',
       '--use-preload-plugins',
 
-      ...libraries.map(({ name }) => path.join('build', name, debug ? 'debug' : 'release', `${name}.a`)),
+      ...libraries.map(({ name }) => path.join('build', debug ? 'debug' : 'release', name, `${name}.a`)),
 
       '-o',
       'dist/index.html',

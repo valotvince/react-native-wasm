@@ -41,7 +41,7 @@ const getObjectOutputFilePath = (outputDirectory, sourcePath) => {
 };
 
 module.exports = async (cwd, library, { debug }) => {
-  const outputDirectory = path.join(cwd, 'build', library.name, debug ? 'debug' : 'release');
+  const outputDirectory = path.join(cwd, 'build', debug ? 'debug' : 'release', library.name);
 
   await fs.mkdir(path.join(outputDirectory), { recursive: true });
 
